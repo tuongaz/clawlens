@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Brain } from 'lucide-react'
 import type { Session } from '../types'
 import { timeAgo } from '../App'
 
@@ -177,7 +178,7 @@ export function SessionCard({ session }: SessionCardProps) {
             </span>
           )}
           {session.usesMemory && (
-            <span className="badge badge-memory" title="Uses memory">&#128024; Memory</span>
+            <span className="badge badge-memory" title="Uses memory"><Brain size={12} /> Memory</span>
           )}
           {session.client && (
             (() => {

@@ -146,8 +146,11 @@ func LoadGroupedSessions(limit int) ([]ProjectGroup, error) {
 
 		dirName := filepath.Base(filepath.Dir(f))
 		sess.ProjectName = decodeProjectPath(dirName)
-		if client, ok := ideMap[sess.CWD]; ok {
-			sess.Client = client
+		for folder, client := range ideMap {
+			if sess.CWD == folder || strings.HasPrefix(sess.CWD, folder+string(filepath.Separator)) {
+				sess.Client = client
+				break
+			}
 		}
 		projectMap[dirName] = append(projectMap[dirName], *sess)
 	}
