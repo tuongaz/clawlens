@@ -4,9 +4,11 @@ import argparse
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocket
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+
+from clawhawk.ws import websocket_endpoint
 
 # Resolve web/dist relative to the project root (3 levels up from src/clawhawk/app.py)
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -27,6 +29,11 @@ def _setup_static_files() -> None:
 
 
 _setup_static_files()
+
+
+@app.websocket("/ws")
+async def ws_route(ws: WebSocket) -> None:
+    await websocket_endpoint(ws)
 
 
 @app.get("/{full_path:path}")
