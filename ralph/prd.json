@@ -270,7 +270,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "notes": "This is the final smoke test. Run with an active Claude Code session to verify live data flows through."
     }
   ]
