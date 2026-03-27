@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import re
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -303,15 +304,31 @@ _cache: dict[str, CachedSession] = {}
 # ---------------------------------------------------------------------------
 
 
-def _load_active_session_ids(home: str) -> set[str]:
-    """Read ~/.claude/sessions/*.json to find sessions whose process is still running."""
-    active: set[str] = set()
+@dataclass
+class ActiveInfo:
+    """Active session detection data."""
+
+    session_ids: set[str]
+    running_cwds: set[str]
+
+
+def _load_active_info(home: str) -> ActiveInfo:
+    """Read ~/.claude/sessions/*.json to find sessions whose process is still running.
+
+    Returns both the set of session IDs listed in the registry AND the set of
+    cwds for running processes.  The cwds are used as a fallback: when /clear
+    is used, Claude Code creates a new JSONL (with a new session ID) but does
+    NOT update the registry file, so the new session ID won't appear in
+    ``session_ids``.  We detect this by checking whether a JSONL belongs to a
+    cwd that still has a live Claude process.
+    """
+    info = ActiveInfo(session_ids=set(), running_cwds=set())
     sessions_dir = os.path.join(home, ".claude", "sessions")
 
     try:
         entries = os.listdir(sessions_dir)
     except OSError:
-        return active
+        return info
 
     for name in entries:
         if not name.endswith(".json"):
@@ -325,17 +342,20 @@ def _load_active_session_ids(home: str) -> set[str]:
 
         session_id = data.get("sessionId", "")
         pid = data.get("pid", 0)
+        cwd = data.get("cwd", "")
         if not session_id or not pid:
             continue
 
         # Check if process is still running.
         try:
             os.kill(pid, 0)
-            active.add(session_id)
+            info.session_ids.add(session_id)
+            if cwd:
+                info.running_cwds.add(cwd)
         except (OSError, ProcessLookupError):
             pass
 
-    return active
+    return info
 
 
 # ---------------------------------------------------------------------------
@@ -354,7 +374,8 @@ def load_grouped_sessions(limit: int = 0) -> list[ProjectGroup]:
 
     ide_dir = os.path.join(home, ".claude", "ide")
     ide_map = load_ide_map(ide_dir)
-    active_sessions = _load_active_session_ids(home)
+    active_info = _load_active_info(home)
+    now = time.time()
 
     pattern = os.path.join(home, ".claude", "projects", "*", "*.jsonl")
     files = glob.glob(pattern)
@@ -385,8 +406,17 @@ def load_grouped_sessions(limit: int = 0) -> list[ProjectGroup]:
             sess = parsed
             _cache[fpath] = CachedSession(mod_time=mod_time, session=sess.model_copy())
 
-        # A session is active only if its Claude Code process is still running.
-        sess.is_active = sess.session_id in active_sessions
+        # A session is active if its ID appears in the registry, OR if its
+        # cwd has a running Claude process and the JSONL was recently modified
+        # (handles /clear which creates a new session ID without updating the
+        # registry).
+        _RECENCY_SECS = 30
+        is_registered = sess.session_id in active_info.session_ids
+        is_recent_in_active_cwd = (
+            sess.cwd in active_info.running_cwds
+            and (now - mod_time) < _RECENCY_SECS
+        )
+        sess.is_active = is_registered or is_recent_in_active_cwd
 
         dir_name = os.path.basename(os.path.dirname(fpath))
         sess.project_name = decode_project_path(dir_name)
