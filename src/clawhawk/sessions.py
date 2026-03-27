@@ -193,6 +193,7 @@ def parse_session(fpath: str) -> Session | None:
     last_context_tokens = 0
 
     session_id = ""
+    session_name = ""
     cwd = ""
     git_branch = ""
     version = ""
@@ -220,6 +221,10 @@ def parse_session(fpath: str) -> Session | None:
                     last_ts = msg.timestamp
                 if msg.version:
                     version = msg.version
+
+                # Extract session name from agent-name entries.
+                if msg.type == "agent-name" and msg.agent_name:
+                    session_name = msg.agent_name
 
                 # Track whether session is waiting for user input.
                 if msg.type == "user":
@@ -264,6 +269,7 @@ def parse_session(fpath: str) -> Session | None:
 
     return Session(
         session_id=session_id,
+        name=session_name,
         cwd=cwd,
         git_branch=git_branch,
         timestamp=last_ts,

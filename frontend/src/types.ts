@@ -1,5 +1,6 @@
 export interface Session {
   sessionId: string
+  name: string
   projectName: string
   cwd: string
   gitBranch: string

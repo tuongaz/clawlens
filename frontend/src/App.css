@@ -35,6 +35,10 @@ body {
 }
 
 @keyframes pulse-blink {
-  0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(63, 185, 80, 0.5); }
-  50% { opacity: 0.25; box-shadow: 0 0 2px rgba(63, 185, 80, 0.2); }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.animate-pulse-blink {
+  animation: pulse-blink 2s ease-in-out infinite;
 }

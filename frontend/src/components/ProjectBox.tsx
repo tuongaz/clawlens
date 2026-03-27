@@ -27,10 +27,12 @@ export function ProjectBox({ group }: ProjectBoxProps) {
   const hiddenCount = group.sessions.length - defaultSessions.length
 
   return (
-    <Card className="bg-[var(--bg-secondary)] border border-[var(--border)] p-5">
+    <Card className="bg-transparent border-0 shadow-none p-5">
       <Card.Header className="flex-row items-center gap-3 p-0 pb-1">
-        {hasActive && (
-          <span className="inline-block w-2 h-2 rounded-full bg-success shadow-[0_0_8px_rgba(63,185,80,0.5)] shrink-0 animate-[pulse-blink_2s_ease-in-out_infinite]" />
+        {hasActive ? (
+          <span className="inline-block w-2 h-2 rounded-full bg-success shadow-[0_0_8px_rgba(63,185,80,0.5)] shrink-0 animate-pulse-blink" />
+        ) : (
+          <span className="inline-block w-2 h-2 rounded-full bg-[var(--text-secondary)] opacity-40 shrink-0" />
         )}
         <span className="font-mono text-lg font-bold text-[var(--text-bright)] whitespace-nowrap">
           {name}

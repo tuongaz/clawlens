@@ -17,6 +17,7 @@ class Session(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     session_id: str = ""
+    name: str = ""
     project_name: str = ""
     cwd: str = ""
     git_branch: str = ""
@@ -88,6 +89,9 @@ class Message(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     type: str = ""
+    subtype: str = ""
+    content: Any = None
+    agent_name: str = ""
     session_id: str = ""
     cwd: str = ""
     git_branch: str = ""
