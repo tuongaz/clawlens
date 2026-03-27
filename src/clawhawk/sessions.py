@@ -420,9 +420,24 @@ def load_grouped_sessions(limit: int = 0) -> list[ProjectGroup]:
     # Session IDs that are the newest file for a running cwd.
     cwd_active_ids: set[str] = {sid for _, sid in cwd_newest.values()}
 
+    # Registered session IDs that have been superseded by a newer JSONL in
+    # the same cwd (i.e. /clear was used).  These should NOT be marked active.
+    stale_registered: set[str] = set()
+    for cwd, (_, newest_sid) in cwd_newest.items():
+        for sid in active_info.session_ids:
+            if sid != newest_sid:
+                # Check if this registered session belongs to the same cwd.
+                for _, s in parsed:
+                    if s.session_id == sid and s.cwd == cwd:
+                        stale_registered.add(sid)
+                        break
+
     # Second pass: assign active status, project name, IDE client.
     for fpath, sess in parsed:
-        is_registered = sess.session_id in active_info.session_ids
+        is_registered = (
+            sess.session_id in active_info.session_ids
+            and sess.session_id not in stale_registered
+        )
         is_newest_in_active_cwd = sess.session_id in cwd_active_ids
         sess.is_active = is_registered or is_newest_in_active_cwd
 
