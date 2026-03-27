@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Card, Button } from '@heroui/react'
 import type { ProjectGroup } from '../types'
 import { SessionCard } from './SessionCard'
 
@@ -26,35 +27,54 @@ export function ProjectBox({ group }: ProjectBoxProps) {
   const hiddenCount = group.sessions.length - defaultSessions.length
 
   return (
-    <section className="project-section">
-      <div className="project-heading">
-        {hasActive && <span className="project-active-dot" />}
-        <span className="project-name">{name}</span>
-        <span className="project-path">{group.path}</span>
-        <span className="project-count">
+    <Card className="bg-[var(--bg-secondary)] border border-[var(--border)] p-5">
+      <Card.Header className="flex-row items-center gap-3 p-0 pb-1">
+        {hasActive && (
+          <span className="inline-block w-2 h-2 rounded-full bg-success shadow-[0_0_8px_rgba(63,185,80,0.5)] shrink-0 animate-[pulse-blink_2s_ease-in-out_infinite]" />
+        )}
+        <span className="font-mono text-lg font-bold text-[var(--text-bright)] whitespace-nowrap">
+          {name}
+        </span>
+        <span className="font-mono text-[13px] text-[var(--text-secondary)] overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
+          {group.path}
+        </span>
+        <span className="font-mono text-[13px] text-[var(--text-secondary)] ml-auto whitespace-nowrap shrink-0">
           {group.sessions.length} session{group.sessions.length !== 1 ? 's' : ''}
           {hasActive && ` · ${activeSessions.length} active`}
         </span>
-      </div>
-      <div className="project-sessions">
-        {visibleSessions.map((session) => (
-          <SessionCard key={session.sessionId} session={session} projectPath={group.path} />
-        ))}
-        {!expanded && hiddenCount > 0 && (
-          <div className="show-more-row">
-            <button className="show-more-btn" onClick={() => setExpanded(true)}>
-              Show {hiddenCount} more session{hiddenCount !== 1 ? 's' : ''}
-            </button>
-          </div>
-        )}
-        {expanded && hasIdle && hasActive && (
-          <div className="show-more-row">
-            <button className="show-more-btn" onClick={() => setExpanded(false)}>
-              Show less
-            </button>
-          </div>
-        )}
-      </div>
-    </section>
+      </Card.Header>
+
+      <Card.Content className="p-0 pt-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 items-stretch">
+          {visibleSessions.map((session) => (
+            <SessionCard key={session.sessionId} session={session} projectPath={group.path} />
+          ))}
+          {!expanded && hiddenCount > 0 && (
+            <div className="col-span-full flex justify-center py-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="font-mono text-xs text-[var(--text-secondary)] border-[var(--border)] hover:text-[var(--text-primary)] hover:border-[var(--accent-cyan)]"
+                onPress={() => setExpanded(true)}
+              >
+                Show {hiddenCount} more session{hiddenCount !== 1 ? 's' : ''}
+              </Button>
+            </div>
+          )}
+          {expanded && hasIdle && hasActive && (
+            <div className="col-span-full flex justify-center py-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="font-mono text-xs text-[var(--text-secondary)] border-[var(--border)] hover:text-[var(--text-primary)] hover:border-[var(--accent-cyan)]"
+                onPress={() => setExpanded(false)}
+              >
+                Show less
+              </Button>
+            </div>
+          )}
+        </div>
+      </Card.Content>
+    </Card>
   )
 }

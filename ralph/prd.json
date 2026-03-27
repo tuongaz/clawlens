@@ -181,7 +181,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "Import order matters: tailwindcss MUST come before @heroui/styles."
     },
     {
@@ -200,7 +200,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "Follow HeroUI best practices — don't try to pixel-match the current UI. Use HeroUI's built-in color variants and spacing. Check https://www.heroui.com/docs for current component APIs since some (Meter, Surface) may not exist."
     },
     {
@@ -216,7 +216,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": "If HeroUI Surface component doesn't exist, use Card or a div with Tailwind classes. Follow HeroUI patterns for layout."
     },
     {

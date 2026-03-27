@@ -12,6 +12,12 @@
 - Use `asyncio.to_thread()` to call sync/blocking functions (file I/O, os.kill) from async handlers
 - Frontend uses bun 1.3.5 as package manager; HeroUI v3 is @heroui/react + @heroui/styles (use @latest, not @beta)
 - CSS import order for HeroUI: `@import "tailwindcss"` first, then `@import "@heroui/styles"`
+- HeroUI v3 Card uses compound component pattern: Card.Header, Card.Content, Card.Footer (not separate CardHeader/CardBody/CardFooter)
+- WebSocket must use `ws.send_text()` not `ws.send_bytes()` — browser `JSON.parse(event.data)` fails silently on Blob data
+- HeroUI Meter component accepts color prop ('default'|'warning'|'danger') and has Meter.Track, Meter.Fill, Meter.Output subcomponents
+- Tooltip uses compound pattern: Tooltip > Tooltip.Trigger > Tooltip.Content (with Tooltip.Arrow)
+- HeroUI Button variant options: 'primary'|'secondary'|'tertiary'|'danger'|'danger-soft'|'ghost'|'outline' (NOT 'bordered')
+- Tailwind v4 responsive grid: use `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4` for 1-4 column responsive layouts
 
 # Ralph Progress Log
 Started: Fri 27 Mar 2026 18:30:05 AEDT
@@ -142,4 +148,49 @@ Started: Fri 27 Mar 2026 18:30:05 AEDT
   - bun 1.3.5 is the installed package manager for frontend; use `bun add` not `npm install`
   - @tailwindcss/vite plugin goes in the Vite plugins array alongside @vitejs/plugin-react
   - CSS imports for HeroUI go in the main CSS file: `@import "tailwindcss"` then `@import "@heroui/styles"` (done in US-012)
+---
+
+## 2026-03-27 - US-012
+- Configured dark theme for HeroUI v3
+- Added `class="dark"` and `data-theme="dark"` to `<html>` tag in frontend/index.html
+- Added `@import "tailwindcss"` and `@import "@heroui/styles"` (in correct order) to top of frontend/src/App.css
+- Existing CSS custom properties and body styles preserved — dark background renders immediately, no white flash
+- Files changed: frontend/index.html, frontend/src/App.css, web/dist/ (rebuilt)
+- **Learnings for future iterations:**
+  - HeroUI dark theme requires both `class="dark"` AND `data-theme="dark"` on the `<html>` element
+  - CSS import order is critical: `@import "tailwindcss"` MUST come before `@import "@heroui/styles"`
+  - Existing CSS custom properties (--bg-primary, etc.) coexist fine with HeroUI/Tailwind — no conflicts
+  - Tailwind v4 base styles don't override explicit body background-color from custom CSS
+  - HeroUI v3 does NOT require a HeroUIProvider wrapper for basic theming — just CSS imports and HTML attributes
+---
+
+## 2026-03-27 - US-013
+- Migrated SessionCard.tsx to HeroUI components: Card (compound pattern), Chip, Tooltip, Meter
+- Card container with Card.Header, Card.Content, Card.Footer replacing plain divs
+- Status badges use HeroUI Chip (git branch, memory, IDE with deep links)
+- Context meter uses HeroUI Meter with color variants (default/warning/danger)
+- Tooltips on all footer items (branch, memory, IDE)
+- Active/waiting/idle states visually distinct via border-success/border-warning colors
+- Fixed WebSocket bug: changed ws.send_bytes() to ws.send_text() so browser JSON.parse works
+- Files changed: frontend/src/components/SessionCard.tsx, src/clawhawk/ws.py, web/dist/
+- **Learnings for future iterations:**
+  - HeroUI v3 Card uses compound components (Card.Header, Card.Content, Card.Footer) — NOT separate imports (CardHeader, CardBody, CardFooter)
+  - WebSocket `send_bytes()` sends binary frames; browser receives Blob which `JSON.parse()` silently fails on — always use `send_text()` for JSON
+  - HeroUI Chip supports variant="soft", variant="secondary" and size="sm" — good for compact badges
+  - Meter component has Meter.Track, Meter.Fill, Meter.Output subcomponents; color prop accepts 'default'|'warning'|'danger'
+  - Tooltip compound pattern: Tooltip > Tooltip.Trigger > Tooltip.Content > Tooltip.Arrow
+  - Custom CSS vars (--bg-primary, --border, etc.) work alongside HeroUI/Tailwind classes in className props
+---
+
+## 2026-03-27 - US-014
+- Migrated ProjectBox.tsx to HeroUI components: Card (Card.Header, Card.Content) for wrapper, Button for show more/less
+- Replaced CSS class-based layout with Tailwind responsive grid: grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4
+- Active indicator dot, project name, path, and session count all rendered in Card.Header with Tailwind flex utilities
+- Show more/less buttons use HeroUI Button with variant="outline" and col-span-full for grid spanning
+- Files changed: frontend/src/components/ProjectBox.tsx, ralph/prd.json, ralph/progress.txt, web/dist/
+- **Learnings for future iterations:**
+  - HeroUI Button does NOT have a "bordered" variant — use "outline" instead (valid: primary, secondary, tertiary, danger, danger-soft, ghost, outline)
+  - HeroUI Button uses `onPress` instead of `onClick` (React Aria convention)
+  - Tailwind v4 responsive breakpoints (sm, lg, 2xl) work natively with grid-cols-N — no need for custom CSS media queries
+  - col-span-full is the Tailwind equivalent of `grid-column: 1 / -1` for spanning full grid width
 ---
