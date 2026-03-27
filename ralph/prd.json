@@ -30,7 +30,7 @@
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Reference the Go structs in internal/sessions/sessions.go for the exact field names and types. The Session model needs: sessionId, timestamp, firstUserPrompt, lastUserPrompt, lastAction, model, contextTokens, maxContextTokens, inputTokens, outputTokens, isActive, waitingForInput, gitBranch, usesMemory, client, cwd, projectName."
     },
     {
@@ -44,7 +44,7 @@
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Reference internal/sessions/ide.go for the Go implementation. Smallest module — good starting point for porting."
     },
     {
@@ -58,7 +58,7 @@
         "Typecheck passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Reference internal/sessions/sessions.go for the Go implementation. This story covers ONLY the single-file parser and helpers. The grouping/caching/loading logic is in US-005."
     },
     {
