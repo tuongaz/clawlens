@@ -185,6 +185,9 @@ export function SessionDetailPage() {
         <StatBox label="Duration" value={formatDuration(detail.totalDurationMs)} />
         <StatBox label="Turns" value={String(detail.turnCount)} />
       </div>
+
+      {/* Tool Usage */}
+      <ToolUsageSection toolUsage={detail.toolUsage} mcpToolUsage={detail.mcpToolUsage} />
     </div>
   )
 }
@@ -194,6 +197,72 @@ function StatBox({ label, value }: { label: string; value: string }) {
     <div className="flex-1 min-w-[120px] bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-4 py-3 text-center">
       <div className="text-[var(--text-secondary)] text-[11px] mb-1">{label}</div>
       <div className="text-[var(--text-bright)] font-mono text-lg font-semibold">{value}</div>
+    </div>
+  )
+}
+
+function formatMcpToolName(name: string): string {
+  // mcp__serena__find_symbol → "serena: find_symbol"
+  const parts = name.replace(/^mcp__/, '').split('__')
+  if (parts.length >= 2) {
+    return `${parts[0]}: ${parts.slice(1).join('__')}`
+  }
+  return name
+}
+
+function ToolBarList({ items, color }: { items: [string, number][]; color: string }) {
+  const max = Math.max(...items.map(([, c]) => c))
+  return (
+    <div className="space-y-1.5">
+      {items.map(([name, count]) => (
+        <div key={name} className="flex items-center gap-2">
+          <span className="text-xs text-[var(--text-primary)] font-mono w-[180px] truncate shrink-0" title={name}>
+            {name}
+          </span>
+          <div className="flex-1 h-4 bg-white/5 rounded overflow-hidden">
+            <div
+              className="h-full rounded"
+              style={{
+                width: `${Math.max((count / max) * 100, 2)}%`,
+                backgroundColor: color,
+              }}
+            />
+          </div>
+          <span className="text-xs text-[var(--text-secondary)] font-mono w-8 text-right shrink-0">{count}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ToolUsageSection({ toolUsage, mcpToolUsage }: { toolUsage: Record<string, number>; mcpToolUsage: Record<string, number> }) {
+  const builtinEntries = Object.entries(toolUsage).sort((a, b) => b[1] - a[1])
+  const mcpEntries = Object.entries(mcpToolUsage)
+    .map(([name, count]) => [formatMcpToolName(name), count] as [string, number])
+    .sort((a, b) => b[1] - a[1])
+
+  if (builtinEntries.length === 0 && mcpEntries.length === 0) {
+    return (
+      <div className="mt-6 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4 text-center text-[var(--text-secondary)] text-sm">
+        No tools used
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      {builtinEntries.length > 0 && (
+        <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-[var(--text-bright)] mb-3">Built-in Tools</h3>
+          <ToolBarList items={builtinEntries} color="var(--accent-cyan)" />
+        </div>
+      )}
+      {mcpEntries.length > 0 && (
+        <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-[var(--text-bright)] mb-3">MCP Tools</h3>
+          <ToolBarList items={mcpEntries} color="var(--accent-magenta)" />
+        </div>
+      )}
     </div>
   )
 }
