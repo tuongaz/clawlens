@@ -212,3 +212,18 @@ Started: Fri 27 Mar 2026 18:30:05 AEDT
   - For responsive header layout, use `flex-col sm:flex-row` to stack on mobile and align horizontally on desktop
   - `max-sm:` prefix in Tailwind v4 targets screens below sm breakpoint — useful for hiding borders on mobile
 ---
+
+## 2026-03-27 - US-016
+- Updated App.tsx: replaced `.app`, `.main`, `.empty-state` CSS classes with Tailwind utility classes
+- Reduced App.css from ~534 lines to ~42 lines: only Tailwind/HeroUI imports, CSS custom properties, body styles, and `pulse-blink` keyframes remain
+- Removed all unused CSS: header, token stats, project section, session card, context gauge, badge, show more, empty state, and responsive media queries
+- Removed redundant `* { margin: 0; padding: 0; box-sizing: border-box; }` reset (Tailwind v4 preflight covers this)
+- All quality checks pass: pyright clean, tsc + vite build, 33 pytest tests
+- Verified in browser: dashboard renders correctly with live data
+- Files changed: frontend/src/App.tsx, frontend/src/App.css, web/dist/
+- **Learnings for future iterations:**
+  - Tailwind v4 includes its own CSS reset (preflight), so manual `* { box-sizing: border-box }` resets are redundant
+  - CSS custom properties in `:root` are still needed for Tailwind arbitrary values like `text-[var(--text-secondary)]` used across all components
+  - The `@keyframes pulse-blink` must stay in CSS — it's referenced by Tailwind arbitrary animations `animate-[pulse-blink_2s_ease-in-out_infinite]` in ProjectBox and SessionCard
+  - `max-sm:px-4` in Tailwind v4 is the equivalent of `@media (max-width: 640px) { padding: 16px }` — cleaner than media queries
+---
