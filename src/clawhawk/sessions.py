@@ -1,12 +1,17 @@
-"""JSONL session parser and helper functions."""
+"""JSONL session parser, caching, and grouped loading."""
 
 from __future__ import annotations
 
+import glob
 import json
 import logging
+import os
 import re
+from dataclasses import dataclass
+from pathlib import Path
 
-from clawhawk.models import Message, Session
+from clawhawk.ide import load_ide_map
+from clawhawk.models import Message, ProjectGroup, Session
 
 logger = logging.getLogger(__name__)
 
@@ -271,3 +276,163 @@ def parse_session(fpath: str) -> Session | None:
         max_context_tokens=get_model_context_limit(last_model),
         version=version,
     )
+
+
+# ---------------------------------------------------------------------------
+# File-level cache
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class CachedSession:
+    mod_time: float
+    session: Session
+
+
+_cache: dict[str, CachedSession] = {}
+
+
+# ---------------------------------------------------------------------------
+# Active session detection
+# ---------------------------------------------------------------------------
+
+
+def _load_active_session_ids(home: str) -> set[str]:
+    """Read ~/.claude/sessions/*.json to find sessions whose process is still running."""
+    active: set[str] = set()
+    sessions_dir = os.path.join(home, ".claude", "sessions")
+
+    try:
+        entries = os.listdir(sessions_dir)
+    except OSError:
+        return active
+
+    for name in entries:
+        if not name.endswith(".json"):
+            continue
+        fpath = os.path.join(sessions_dir, name)
+        try:
+            with open(fpath, encoding="utf-8") as f:
+                data = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            continue
+
+        session_id = data.get("sessionId", "")
+        pid = data.get("pid", 0)
+        if not session_id or not pid:
+            continue
+
+        # Check if process is still running.
+        try:
+            os.kill(pid, 0)
+            active.add(session_id)
+        except (OSError, ProcessLookupError):
+            pass
+
+    return active
+
+
+# ---------------------------------------------------------------------------
+# Grouped session loading
+# ---------------------------------------------------------------------------
+
+
+def load_grouped_sessions(limit: int = 0) -> list[ProjectGroup]:
+    """Load all JSONL session files, group by project, and return sorted results.
+
+    Globs ``~/.claude/projects/*/*.jsonl``, skips ``subagents/`` directories,
+    caches parsed sessions by file modification time, enriches with IDE and
+    memory information, and sorts by most recent timestamp descending.
+    """
+    home = os.path.expanduser("~")
+
+    ide_dir = os.path.join(home, ".claude", "ide")
+    ide_map = load_ide_map(ide_dir)
+    active_sessions = _load_active_session_ids(home)
+
+    pattern = os.path.join(home, ".claude", "projects", "*", "*.jsonl")
+    files = glob.glob(pattern)
+
+    # Group sessions by project directory name.
+    project_map: dict[str, list[Session]] = {}
+
+    for fpath in files:
+        # Skip anything under a subagents/ directory.
+        if os.sep + "subagents" + os.sep in fpath:
+            continue
+
+        try:
+            stat = os.stat(fpath)
+        except OSError:
+            continue
+
+        mod_time = stat.st_mtime
+
+        # Check cache.
+        cached = _cache.get(fpath)
+        if cached is not None and cached.mod_time == mod_time:
+            sess = cached.session.model_copy()
+        else:
+            parsed = parse_session(fpath)
+            if parsed is None:
+                continue
+            sess = parsed
+            _cache[fpath] = CachedSession(mod_time=mod_time, session=sess.model_copy())
+
+        # A session is active only if its Claude Code process is still running.
+        sess.is_active = sess.session_id in active_sessions
+
+        dir_name = os.path.basename(os.path.dirname(fpath))
+        sess.project_name = decode_project_path(dir_name)
+
+        # Assign IDE client from ide_map.
+        for folder, client in ide_map.items():
+            if sess.cwd == folder or sess.cwd.startswith(folder + os.sep):
+                sess.client = client
+                break
+
+        project_map.setdefault(dir_name, []).append(sess)
+
+    # Build project groups.
+    groups: list[ProjectGroup] = []
+
+    for dir_name, sessions in project_map.items():
+        # Sort sessions by timestamp descending.
+        sessions.sort(key=lambda s: s.timestamp, reverse=True)
+
+        if limit > 0 and len(sessions) > limit:
+            sessions = sessions[:limit]
+
+        # Check if this project has a memory directory with .md files.
+        mem_dir = os.path.join(home, ".claude", "projects", dir_name, "memory")
+        has_memory = False
+        try:
+            for entry in os.listdir(mem_dir):
+                if entry.endswith(".md") and not os.path.isdir(
+                    os.path.join(mem_dir, entry)
+                ):
+                    has_memory = True
+                    break
+        except OSError:
+            pass
+
+        if has_memory:
+            for s in sessions:
+                s.uses_memory = True
+
+        decoded_path = decode_project_path(dir_name)
+        groups.append(
+            ProjectGroup(
+                project_name=decoded_path,
+                path=decoded_path,
+                sessions=sessions,
+            )
+        )
+
+    # Sort projects by most recent session timestamp descending.
+    groups.sort(
+        key=lambda g: g.sessions[0].timestamp if g.sessions else "",
+        reverse=True,
+    )
+
+    return groups

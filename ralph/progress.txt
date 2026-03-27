@@ -9,6 +9,7 @@
 - Python `date.weekday()` returns 0=Monday (unlike Go where Sunday=0), so Monday-based week start = `now - timedelta(days=now.weekday())`
 - WebSocket/API routes must be registered BEFORE the SPA catch-all `/{full_path:path}` route in app.py
 - `_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent` goes from `src/clawhawk/app.py` to project root
+- Use `asyncio.to_thread()` to call sync/blocking functions (file I/O, os.kill) from async handlers
 
 # Ralph Progress Log
 Started: Fri 27 Mar 2026 18:30:05 AEDT
@@ -88,4 +89,31 @@ Started: Fri 27 Mar 2026 18:30:05 AEDT
   - StaticFiles mount must come before catch-all route; mounting /assets/ separately avoids conflicts with the SPA fallback
   - The catch-all `/{full_path:path}` route handles both root-level static files (favicon.svg, icons.svg) and SPA client-side routing
   - WebSocket endpoint (US-008) must be registered BEFORE the catch-all route to avoid being caught by the SPA fallback
+---
+
+## 2026-03-27 - US-008
+- Created src/clawhawk/ws.py with WebSocket endpoint for real-time session data
+- Polling loop with adaptive interval: 10ms when active sessions, 2s when idle
+- Change detection: compare JSON bytes, skip send if unchanged
+- Uses asyncio.to_thread for blocking load_grouped_sessions/load_token_stats calls
+- WebSocketDisconnect handled gracefully
+- Registered @app.websocket("/ws") route in app.py before SPA catch-all
+- Files changed: src/clawhawk/ws.py (new), src/clawhawk/app.py
+- **Learnings for future iterations:**
+  - FastAPI WebSocket uses `await ws.accept()` then `await ws.send_bytes(data)` — simpler than Go's gorilla/coder websocket
+  - `asyncio.to_thread()` is the right way to call sync functions (file I/O, os.kill) from async WebSocket handler
+  - `model_dump_json(by_alias=True).encode()` gives bytes for change detection comparison
+  - WebSocketDisconnect exception is the clean way to handle client disconnect in FastAPI
+---
+
+## 2026-03-27 - US-009
+- Created tests/test_sessions.py with 19 tests: model context limits, text helpers (clean_command_text, truncate, decode_project_path), content extraction (extract_user_text, extract_action), and parse_session with JSONL fixtures
+- Created tests/test_stats.py with 8 tests: parse_file_token_stats (grouping, cache tokens, user skipping, zero usage, malformed lines, empty/nonexistent files) and load_token_stats period boundary verification
+- All tests use tmp_path fixture for file isolation
+- Also included uncommitted US-005 code (load_grouped_sessions, caching, active session detection) in sessions.py
+- Files changed: tests/__init__.py (new), tests/test_sessions.py (new), tests/test_stats.py (new), src/clawhawk/sessions.py
+- **Learnings for future iterations:**
+  - Tests use `_make_jsonl_line()` helpers to build JSONL fixtures with proper camelCase keys (sessionId, gitBranch)
+  - For load_token_stats tests, mock `glob.glob` and `os.path.expanduser` to control file discovery and use `_stats_cache.clear()` to avoid stale cache
+  - Period boundary tests use relative dates (today, yesterday, prev_month) so they don't break over time
 ---

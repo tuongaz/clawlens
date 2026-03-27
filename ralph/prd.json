@@ -121,7 +121,7 @@
         "Typecheck passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Depends on US-005 (load_grouped_sessions), US-006 (load_token_stats), US-007 (FastAPI app). The endpoint calls both loaders each tick, serializes DashboardMessage, and sends if changed."
     },
     {
@@ -136,7 +136,7 @@
         "Typecheck passes"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
