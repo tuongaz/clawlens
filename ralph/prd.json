@@ -73,7 +73,7 @@
         "Typecheck passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Depends on US-003 (ide.py) and US-004 (parse_session). This wires everything together into the main data pipeline."
     },
     {
@@ -88,7 +88,7 @@
         "Typecheck passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Reference internal/sessions/stats.go for the Go implementation."
     },
     {
@@ -105,7 +105,7 @@
         "Typecheck passes"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
