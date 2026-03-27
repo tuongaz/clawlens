@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Brain } from 'lucide-react'
 import { Card, Chip, Tooltip, Meter } from '@heroui/react'
+import { useNavigate } from 'react-router-dom'
 import type { Session } from '../types'
 import { timeAgo } from '../App'
 
@@ -127,6 +128,7 @@ function ideDeepLink(client: string, cwd: string): string | null {
 }
 
 export function SessionCard({ session, projectPath }: SessionCardProps) {
+  const navigate = useNavigate()
   const slug = session.sessionId.slice(0, 8)
   const isActive = session.isActive
   const isWaiting = session.waitingForInput
@@ -144,7 +146,8 @@ export function SessionCard({ session, projectPath }: SessionCardProps) {
 
   return (
     <Card
-      className={`bg-[var(--bg-primary)] border ${borderClass} hover:bg-[var(--bg-card)] shadow-md shadow-black/20 ${isActive ? 'bg-[var(--bg-card)]' : ''}`}
+      className={`bg-[var(--bg-primary)] border ${borderClass} hover:bg-[var(--bg-card)] shadow-md shadow-black/20 cursor-pointer ${isActive ? 'bg-[var(--bg-card)]' : ''}`}
+      onClick={() => navigate(`/session/${session.sessionId}`)}
     >
       <Card.Header className="flex-row items-center gap-2 px-4 pt-3 pb-0">
         {isActive && !isWaiting ? (
@@ -240,6 +243,7 @@ export function SessionCard({ session, projectPath }: SessionCardProps) {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <Chip size="sm" variant="soft" className="font-mono text-[10px] text-[var(--accent-cyan)] bg-[rgba(88,166,255,0.1)] border border-[rgba(88,166,255,0.2)] gap-1 cursor-pointer hover:bg-[rgba(88,166,255,0.2)] hover:border-[rgba(88,166,255,0.4)] transition-all">
                         {getClientIcon(session.client)} {session.client}
