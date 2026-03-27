@@ -18,6 +18,8 @@
 - Tooltip uses compound pattern: Tooltip > Tooltip.Trigger > Tooltip.Content (with Tooltip.Arrow)
 - HeroUI Button variant options: 'primary'|'secondary'|'tertiary'|'danger'|'danger-soft'|'ghost'|'outline' (NOT 'bordered')
 - Tailwind v4 responsive grid: use `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4` for 1-4 column responsive layouts
+- HeroUI Chip variant options: 'primary'|'secondary'|'tertiary'|'soft' (NOT 'dot' — use a manual span element inside Chip for dot indicators)
+- HeroUI Chip does NOT have `startContent` prop — place decorative elements as children instead
 
 # Ralph Progress Log
 Started: Fri 27 Mar 2026 18:30:05 AEDT
@@ -193,4 +195,20 @@ Started: Fri 27 Mar 2026 18:30:05 AEDT
   - HeroUI Button uses `onPress` instead of `onClick` (React Aria convention)
   - Tailwind v4 responsive breakpoints (sm, lg, 2xl) work natively with grid-cols-N — no need for custom CSS media queries
   - col-span-full is the Tailwind equivalent of `grid-column: 1 / -1` for spanning full grid width
+---
+
+## 2026-03-27 - US-015
+- Migrated Header.tsx to HeroUI components: Card (Card.Header) for container, Button for filter toggle, Chip for connection status
+- Replaced all CSS class-based styling with Tailwind utility classes
+- Filter button uses HeroUI Button with variant toggling (primary when active, outline when inactive)
+- Connection status uses HeroUI Chip with soft variant and manual dot span element (green=connected, red=disconnected)
+- Token stats (Today/Week/Month) rendered with Tailwind flex layout, responsive border styling
+- Session/project counts display correctly in header left section
+- Files changed: frontend/src/components/Header.tsx, ralph/prd.json, ralph/progress.txt, web/dist/
+- **Learnings for future iterations:**
+  - HeroUI Chip does NOT have `variant="dot"` — valid variants are 'primary'|'secondary'|'tertiary'|'soft'
+  - HeroUI Chip does NOT have `startContent` prop — place dot indicators as child elements instead
+  - HeroUI Chip does NOT have `classNames` prop for sub-element styling — use className on the Chip and Tailwind on children
+  - For responsive header layout, use `flex-col sm:flex-row` to stack on mobile and align horizontally on desktop
+  - `max-sm:` prefix in Tailwind v4 targets screens below sm breakpoint — useful for hiding borders on mobile
 ---

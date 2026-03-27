@@ -233,7 +233,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "notes": "If HeroUI ToggleButton doesn't exist, use a regular Button with className toggling based on isSelected state. HeroUI Navbar component may be a good fit for the header container."
     },
     {

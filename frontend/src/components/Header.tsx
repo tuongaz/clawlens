@@ -1,3 +1,4 @@
+import { Card, Button, Chip } from '@heroui/react'
 import type { ProjectGroup, TokenStats } from '../types'
 
 interface HeaderProps {
@@ -29,49 +30,72 @@ export function Header({ groups, stats, connected, lastUpdated, activeOnly, onTo
   const projectCount = groups.length
 
   return (
-    <header className="header">
-      <div className="header-left">
-        <span className="header-icon">&#9670;</span>
-        <h1 className="header-title">ClawHawk</h1>
-        <span className="header-stats">
-          {totalSessions} session{totalSessions !== 1 ? 's' : ''}
-          {activeSessions > 0 && <> &middot; {activeSessions} active</>}
-          {' '}&middot; {projectCount} project{projectCount !== 1 ? 's' : ''}
-        </span>
-      </div>
-      {stats && (
-        <div className="header-tokens">
-          <div className="token-period">
-            <span className="token-label">Today</span>
-            <span className="token-value">{formatStatTokens(stats.today.inputTokens + stats.today.outputTokens)}</span>
-          </div>
-          <div className="token-period">
-            <span className="token-label">Week</span>
-            <span className="token-value">{formatStatTokens(stats.thisWeek.inputTokens + stats.thisWeek.outputTokens)}</span>
-          </div>
-          <div className="token-period">
-            <span className="token-label">Month</span>
-            <span className="token-value">{formatStatTokens(stats.thisMonth.inputTokens + stats.thisMonth.outputTokens)}</span>
-          </div>
-        </div>
-      )}
-      <div className="header-right">
-        <button
-          className={`filter-btn ${activeOnly ? 'filter-active' : ''}`}
-          onClick={onToggleActiveOnly}
-        >
-          {activeOnly ? 'Running only' : 'All sessions'}
-        </button>
-        <span className={`status-dot ${connected ? 'connected' : 'disconnected'}`} />
-        <span className="status-text">
-          {connected ? 'live' : 'disconnected'}
-        </span>
-        {lastUpdated && (
-          <span className="last-updated">
-            {lastUpdated.toLocaleTimeString()}
+    <Card className="mb-7">
+      <Card.Header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-6 py-4">
+        {/* Left: title + stats */}
+        <div className="flex items-center gap-3.5">
+          <span className="text-[var(--accent-cyan)] text-[22px] leading-none">&#9670;</span>
+          <h1 className="font-[var(--font-mono)] text-lg font-bold text-white tracking-wide">ClawHawk</h1>
+          <span className="text-[var(--text-secondary)] text-[13px] pl-3.5 border-l border-[var(--border)]">
+            {totalSessions} session{totalSessions !== 1 ? 's' : ''}
+            {activeSessions > 0 && <> &middot; {activeSessions} active</>}
+            {' '}&middot; {projectCount} project{projectCount !== 1 ? 's' : ''}
           </span>
+        </div>
+
+        {/* Center: token stats */}
+        {stats && (
+          <div className="flex items-center gap-4 px-4 border-l border-r border-[var(--border)] max-sm:border-none max-sm:px-0">
+            {([
+              ['Today', stats.today],
+              ['Week', stats.thisWeek],
+              ['Month', stats.thisMonth],
+            ] as const).map(([label, period]) => (
+              <div key={label} className="flex flex-col items-center gap-0.5">
+                <span className="text-[10px] font-[var(--font-mono)] text-[var(--text-secondary)] uppercase tracking-wider">{label}</span>
+                <span className="text-sm font-[var(--font-mono)] font-semibold text-[var(--text-primary)]">
+                  {formatStatTokens(period.inputTokens + period.outputTokens)}
+                </span>
+              </div>
+            ))}
+          </div>
         )}
-      </div>
-    </header>
+
+        {/* Right: filter + connection status */}
+        <div className="flex items-center gap-2.5 text-xs">
+          <Button
+            size="sm"
+            variant={activeOnly ? 'primary' : 'outline'}
+            onPress={onToggleActiveOnly}
+            className={`font-[var(--font-mono)] text-[11px] mr-2 ${
+              activeOnly
+                ? 'bg-[rgba(63,185,80,0.08)] text-[var(--accent-green)] border-[var(--accent-green)]'
+                : ''
+            }`}
+          >
+            {activeOnly ? 'Running only' : 'All sessions'}
+          </Button>
+          <Chip
+            size="sm"
+            variant="soft"
+            className="font-[var(--font-mono)] text-[11px] uppercase tracking-wider text-[var(--text-secondary)] gap-1.5"
+          >
+            <span
+              className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${
+                connected
+                  ? 'bg-[var(--accent-green)] shadow-[0_0_8px_rgba(63,185,80,0.4)]'
+                  : 'bg-[var(--accent-red)]'
+              }`}
+            />
+            {connected ? 'live' : 'disconnected'}
+          </Chip>
+          {lastUpdated && (
+            <span className="text-[var(--text-secondary)] text-[11px] ml-1 opacity-70">
+              {lastUpdated.toLocaleTimeString()}
+            </span>
+          )}
+        </div>
+      </Card.Header>
+    </Card>
   )
 }
