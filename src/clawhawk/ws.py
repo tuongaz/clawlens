@@ -37,11 +37,12 @@ async def websocket_endpoint(ws: WebSocket) -> None:
             stats = await asyncio.to_thread(load_token_stats)
 
             msg = DashboardMessage(groups=groups, stats=stats)
-            data = msg.model_dump_json(by_alias=True).encode()
+            data_str = msg.model_dump_json(by_alias=True)
+            data_bytes = data_str.encode()
 
-            if data != last_data:
-                await ws.send_bytes(data)
-                last_data = data
+            if data_bytes != last_data:
+                await ws.send_text(data_str)
+                last_data = data_bytes
 
             interval = _TICK_FAST if _has_active_sessions(groups) else _TICK_SLOW
             await asyncio.sleep(interval)

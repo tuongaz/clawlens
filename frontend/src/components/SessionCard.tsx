@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Brain } from 'lucide-react'
+import { Card, Chip, Tooltip, Meter } from '@heroui/react'
 import type { Session } from '../types'
 import { timeAgo } from '../App'
 
@@ -25,12 +26,12 @@ function formatTokens(tokens: number): string {
   return `${tokens}`
 }
 
-function contextColorClass(tokens: number, max: number): string {
-  if (max === 0) return ''
+function contextColor(tokens: number, max: number): 'default' | 'warning' | 'danger' {
+  if (max === 0) return 'default'
   const pct = (tokens / max) * 100
-  if (pct > 90) return 'context-critical'
-  if (pct >= 70) return 'context-warning'
-  return ''
+  if (pct > 90) return 'danger'
+  if (pct >= 70) return 'warning'
+  return 'default'
 }
 
 const VSCodeIcon = () => (
@@ -128,81 +129,153 @@ function ideDeepLink(client: string, cwd: string): string | null {
 export function SessionCard({ session, projectPath }: SessionCardProps) {
   const slug = session.sessionId.slice(0, 8)
   const isActive = session.isActive
+  const isWaiting = session.waitingForInput
   const hasFooter = session.gitBranch || session.usesMemory || session.client
 
+  const borderClass = isActive
+    ? isWaiting
+      ? 'border-warning'
+      : 'border-success'
+    : 'border-[var(--border)]'
+
+  const pct = session.maxContextTokens > 0
+    ? Math.round((session.contextTokens / session.maxContextTokens) * 100)
+    : 0
+
   return (
-    <div className={`session-card ${isActive ? (session.waitingForInput ? 'session-waiting-input' : 'session-active') : ''}`}>
-      <div className="session-card-header">
-        {isActive && !session.waitingForInput && <span className="session-active-dot" />}
-        {isActive && session.waitingForInput && (
-          <span className="session-waiting" title="Waiting for input">
+    <Card
+      className={`bg-[var(--bg-primary)] border ${borderClass} hover:bg-[var(--bg-card)] ${isActive ? 'bg-[var(--bg-card)]' : ''}`}
+    >
+      <Card.Header className="flex-row items-center gap-2 px-4 pt-3 pb-0">
+        {isActive && !isWaiting && (
+          <span className="inline-block w-[7px] h-[7px] rounded-full bg-success shadow-[0_0_8px_rgba(63,185,80,0.5)] animate-[pulse-blink_2s_ease-in-out_infinite] shrink-0" />
+        )}
+        {isActive && isWaiting && (
+          <span className="inline-flex items-center text-warning animate-[pulse-blink_2s_ease-in-out_infinite]" title="Waiting for input">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm3.75-1a.75.75 0 0 1 .75-.75h4a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1-.75-.75Zm0 3a.75.75 0 0 1 .75-.75h2a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1-.75-.75Z" />
             </svg>
           </span>
         )}
-        <span className={`session-slug ${isActive ? 'slug-active' : 'slug-idle'}`}>
+        <span className={`font-mono font-semibold text-xs tracking-wider ${isActive ? 'text-[var(--text-bright)]' : 'text-[var(--text-secondary)]'}`}>
           {slug}
         </span>
-        <div className="session-meta">
-          <span className="session-time">{timeAgo(session.timestamp)}</span>
-        </div>
-      </div>
+        <span className="ml-auto text-[var(--text-secondary)] text-[11px] font-mono">
+          {timeAgo(session.timestamp)}
+        </span>
+      </Card.Header>
 
-      {session.lastUserPrompt && (
-        <div className="session-user-prompt">
-          {session.lastUserPrompt.startsWith('/') ? (
-            <><span className="command-icon">⌘</span> {session.lastUserPrompt}</>
-          ) : (
-            session.lastUserPrompt
-          )}
-        </div>
-      )}
+      <Card.Content className="flex flex-col gap-2.5 px-4 py-2">
+        {session.lastUserPrompt && (
+          <div className="text-[var(--text-primary)] text-xs leading-[1.4] whitespace-pre-wrap break-words line-clamp-3">
+            {session.lastUserPrompt.startsWith('/') ? (
+              <><span className="text-[11px] opacity-60 mr-0.5">&#8984;</span> {session.lastUserPrompt}</>
+            ) : (
+              session.lastUserPrompt
+            )}
+          </div>
+        )}
 
-      {session.lastAction && (
-        <div className="session-action">
-          <span className="action-icon">&#9889;</span>
-          {session.lastAction}
-        </div>
-      )}
+        {session.lastAction && (
+          <div className="flex items-center gap-1.5 text-warning text-[11px] font-mono bg-warning/[0.08] py-1 px-2.5 rounded-[var(--radius-sm)] overflow-hidden text-ellipsis whitespace-nowrap">
+            <span className="text-[11px] shrink-0">&#9889;</span>
+            {session.lastAction}
+          </div>
+        )}
 
-      {session.contextTokens > 0 && (
-        <div className={`session-context ${contextColorClass(session.contextTokens, session.maxContextTokens)}`}>
-          {formatTokens(session.contextTokens)} / {formatTokens(session.maxContextTokens)}
-          {session.maxContextTokens > 0 && (
-            <span className="context-pct">
-              {' '}({Math.round((session.contextTokens / session.maxContextTokens) * 100)}%)
-            </span>
-          )}
-        </div>
-      )}
+        {session.contextTokens > 0 && (
+          <Tooltip>
+            <Tooltip.Trigger>
+              <div className="cursor-default">
+                <Meter
+                  value={pct}
+                  minValue={0}
+                  maxValue={100}
+                  color={contextColor(session.contextTokens, session.maxContextTokens)}
+                  className="w-full"
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[11px] font-mono text-[var(--text-secondary)]">
+                      {formatTokens(session.contextTokens)} / {formatTokens(session.maxContextTokens)}
+                    </span>
+                    {session.maxContextTokens > 0 && (
+                      <Meter.Output className="text-[11px] font-mono text-[var(--text-secondary)] opacity-70" />
+                    )}
+                  </div>
+                  <Meter.Track className="h-1.5 bg-white/10 rounded-full">
+                    <Meter.Fill className="rounded-full" />
+                  </Meter.Track>
+                </Meter>
+              </div>
+            </Tooltip.Trigger>
+            <Tooltip.Content>
+              <Tooltip.Arrow />
+              Context: {formatTokens(session.contextTokens)} / {formatTokens(session.maxContextTokens)} ({pct}%)
+            </Tooltip.Content>
+          </Tooltip>
+        )}
+      </Card.Content>
 
       {hasFooter && (
-        <div className="session-footer">
+        <Card.Footer className="flex items-center gap-2 px-4 pt-0 pb-3 border-t border-[var(--border-light)] flex-wrap mt-auto">
           {session.gitBranch && (
-            <span className="session-branch" title={session.gitBranch}>
-              <GitBranchIcon /> {session.gitBranch}
-            </span>
+            <Tooltip>
+              <Tooltip.Trigger>
+                <Chip size="sm" variant="secondary" className="bg-transparent border-0 text-[var(--text-secondary)] font-mono text-[11px] px-0 gap-1 max-w-[200px]">
+                  <GitBranchIcon />
+                  <span className="truncate">{session.gitBranch}</span>
+                </Chip>
+              </Tooltip.Trigger>
+              <Tooltip.Content>
+                <Tooltip.Arrow />
+                Branch: {session.gitBranch}
+              </Tooltip.Content>
+            </Tooltip>
           )}
           {session.usesMemory && (
-            <span className="badge badge-memory" title="Uses memory"><Brain size={12} /> Memory</span>
+            <Tooltip>
+              <Tooltip.Trigger>
+                <Chip size="sm" variant="soft" color="accent" className="font-mono text-[10px] text-[var(--accent-magenta)] bg-[rgba(188,140,255,0.1)] border border-[rgba(188,140,255,0.2)] gap-1">
+                  <Brain size={12} /> Memory
+                </Chip>
+              </Tooltip.Trigger>
+              <Tooltip.Content>
+                <Tooltip.Arrow />
+                This session uses memory files
+              </Tooltip.Content>
+            </Tooltip>
           )}
           {session.client && (
-            (() => {
-              const link = ideDeepLink(session.client, projectPath)
-              return link ? (
-                <a href={link} className="badge badge-client" title={`Open in ${session.client}`} target="_blank" rel="noopener noreferrer">
-                  {getClientIcon(session.client)} {session.client}
-                </a>
-              ) : (
-                <span className="badge badge-client" title={session.client}>
-                  {getClientIcon(session.client)} {session.client}
-                </span>
-              )
-            })()
+            <Tooltip>
+              <Tooltip.Trigger>
+                {(() => {
+                  const link = ideDeepLink(session.client, projectPath)
+                  return link ? (
+                    <a
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex"
+                    >
+                      <Chip size="sm" variant="soft" className="font-mono text-[10px] text-[var(--accent-cyan)] bg-[rgba(88,166,255,0.1)] border border-[rgba(88,166,255,0.2)] gap-1 cursor-pointer hover:bg-[rgba(88,166,255,0.2)] hover:border-[rgba(88,166,255,0.4)] transition-all">
+                        {getClientIcon(session.client)} {session.client}
+                      </Chip>
+                    </a>
+                  ) : (
+                    <Chip size="sm" variant="soft" className="font-mono text-[10px] text-[var(--accent-cyan)] bg-[rgba(88,166,255,0.1)] border border-[rgba(88,166,255,0.2)] gap-1">
+                      {getClientIcon(session.client)} {session.client}
+                    </Chip>
+                  )
+                })()}
+              </Tooltip.Trigger>
+              <Tooltip.Content>
+                <Tooltip.Arrow />
+                {ideDeepLink(session.client, projectPath) ? `Open in ${session.client}` : session.client}
+              </Tooltip.Content>
+            </Tooltip>
           )}
-        </div>
+        </Card.Footer>
       )}
-    </div>
+    </Card>
   )
 }
