@@ -5,6 +5,7 @@ import { timeAgo } from '../App'
 
 interface SessionCardProps {
   session: Session
+  projectPath: string
 }
 
 const GitBranchIcon = () => (
@@ -124,7 +125,7 @@ function ideDeepLink(client: string, cwd: string): string | null {
   return null
 }
 
-export function SessionCard({ session }: SessionCardProps) {
+export function SessionCard({ session, projectPath }: SessionCardProps) {
   const slug = session.sessionId.slice(0, 8)
   const isActive = session.isActive
   const hasFooter = session.gitBranch || session.usesMemory || session.client
@@ -182,7 +183,7 @@ export function SessionCard({ session }: SessionCardProps) {
           )}
           {session.client && (
             (() => {
-              const link = ideDeepLink(session.client, session.cwd)
+              const link = ideDeepLink(session.client, projectPath)
               return link ? (
                 <a href={link} className="badge badge-client" title={`Open in ${session.client}`} target="_blank" rel="noopener noreferrer">
                   {getClientIcon(session.client)} {session.client}

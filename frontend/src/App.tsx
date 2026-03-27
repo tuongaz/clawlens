@@ -37,11 +37,10 @@ function App() {
         onToggleActiveOnly={() => setActiveOnly((v) => !v)}
       />
       <main className="main">
-        {filteredGroups.map((group, index) => (
+        {filteredGroups.map((group) => (
           <ProjectBox
             key={group.projectName}
             group={group}
-            colorIndex={index}
           />
         ))}
         {filteredGroups.length === 0 && connected && (

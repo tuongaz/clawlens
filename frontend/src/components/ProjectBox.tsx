@@ -2,18 +2,8 @@ import { useState } from 'react'
 import type { ProjectGroup } from '../types'
 import { SessionCard } from './SessionCard'
 
-const ACCENT_COLORS = [
-  '#58a6ff', // blue
-  '#3fb950', // green
-  '#d29922', // yellow
-  '#bc8cff', // magenta
-  '#f78166', // orange
-  '#f85149', // red
-]
-
 interface ProjectBoxProps {
   group: ProjectGroup
-  colorIndex: number
 }
 
 function projectDisplayName(path: string): string {
@@ -21,8 +11,7 @@ function projectDisplayName(path: string): string {
   return parts[parts.length - 1] || path
 }
 
-export function ProjectBox({ group, colorIndex }: ProjectBoxProps) {
-  const accent = ACCENT_COLORS[colorIndex % ACCENT_COLORS.length]
+export function ProjectBox({ group }: ProjectBoxProps) {
   const name = projectDisplayName(group.projectName)
 
   const activeSessions = group.sessions.filter((s) => s.isActive)
@@ -40,7 +29,7 @@ export function ProjectBox({ group, colorIndex }: ProjectBoxProps) {
     <section className="project-section">
       <div className="project-heading">
         {hasActive && <span className="project-active-dot" />}
-        <span className="project-name" style={{ color: accent }}>{name}</span>
+        <span className="project-name">{name}</span>
         <span className="project-path">{group.path}</span>
         <span className="project-count">
           {group.sessions.length} session{group.sessions.length !== 1 ? 's' : ''}
@@ -49,7 +38,7 @@ export function ProjectBox({ group, colorIndex }: ProjectBoxProps) {
       </div>
       <div className="project-sessions">
         {visibleSessions.map((session) => (
-          <SessionCard key={session.sessionId} session={session} />
+          <SessionCard key={session.sessionId} session={session} projectPath={group.path} />
         ))}
         {!expanded && hiddenCount > 0 && (
           <div className="show-more-row">

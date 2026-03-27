@@ -188,6 +188,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
 }
 
 .project-heading {
@@ -217,14 +221,15 @@ body {
 
 .project-name {
   font-family: var(--font-mono);
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   white-space: nowrap;
+  color: var(--text-bright);
 }
 
 .project-path {
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 13px;
   font-family: var(--font-mono);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -234,7 +239,7 @@ body {
 
 .project-count {
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 13px;
   font-family: var(--font-mono);
   margin-left: auto;
   white-space: nowrap;
@@ -245,6 +250,11 @@ body {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
   gap: 12px;
+  align-items: stretch;
+}
+
+.project-sessions > .session-card {
+  height: 100%;
 }
 
 @media (min-width: 640px) {
@@ -349,6 +359,7 @@ body {
   padding-top: 8px;
   border-top: 1px solid var(--border-light);
   flex-wrap: wrap;
+  margin-top: auto;
 }
 
 .session-branch {
