@@ -34,6 +34,18 @@ def get_model_context_limit(model: str) -> int:
     return _MODEL_CONTEXT_LIMITS.get(model, _DEFAULT_CONTEXT_LIMIT)
 
 
+def find_session_file(session_id: str) -> str | None:
+    """Locate a JSONL session file by session ID.
+
+    Globs ``~/.claude/projects/*/{session_id}.jsonl`` and returns the first
+    match, or ``None`` if no matching file is found.
+    """
+    home = os.path.expanduser("~")
+    pattern = os.path.join(home, ".claude", "projects", "*", f"{session_id}.jsonl")
+    matches = glob.glob(pattern)
+    return matches[0] if matches else None
+
+
 # ---------------------------------------------------------------------------
 # Text helpers
 # ---------------------------------------------------------------------------
