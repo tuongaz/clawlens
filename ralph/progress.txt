@@ -10,6 +10,8 @@
 - WebSocket/API routes must be registered BEFORE the SPA catch-all `/{full_path:path}` route in app.py
 - `_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent` goes from `src/clawhawk/app.py` to project root
 - Use `asyncio.to_thread()` to call sync/blocking functions (file I/O, os.kill) from async handlers
+- Frontend uses bun 1.3.5 as package manager; HeroUI v3 is @heroui/react + @heroui/styles (use @latest, not @beta)
+- CSS import order for HeroUI: `@import "tailwindcss"` first, then `@import "@heroui/styles"`
 
 # Ralph Progress Log
 Started: Fri 27 Mar 2026 18:30:05 AEDT
@@ -116,4 +118,28 @@ Started: Fri 27 Mar 2026 18:30:05 AEDT
   - Tests use `_make_jsonl_line()` helpers to build JSONL fixtures with proper camelCase keys (sessionId, gitBranch)
   - For load_token_stats tests, mock `glob.glob` and `os.path.expanduser` to control file discovery and use `_stats_cache.clear()` to avoid stale cache
   - Period boundary tests use relative dates (today, yesterday, prev_month) so they don't break over time
+---
+
+## 2026-03-27 - US-010
+- Updated Makefile: build runs `bun install && bun run build` + `uv sync`, run executes `uv run clawhawk`, clean removes web/dist, frontend/node_modules, .venv
+- Updated CLAUDE.md with Python backend description and new build/run/test/typecheck commands
+- Deleted all Go files: main.go, go.mod, go.sum, internal/ directory (6 Go files), web/embed.go, web/handler.go
+- Verified end-to-end: `make build` succeeds, server starts on :3333, serves frontend with 200, tests pass, typecheck clean
+- Files changed: Makefile, CLAUDE.md, deleted 10 Go files
+- **Learnings for future iterations:**
+  - Python backend verified working before Go deletion: frontend served at 200, WebSocket endpoint registered, all 33 tests pass
+  - `make build` now does two things: frontend build (bun) and Python dep sync (uv sync) — no compilation step
+  - The `web/` directory still exists for `web/dist/` (frontend build output) — only Go files in it were removed
+---
+
+## 2026-03-27 - US-011
+- Installed @heroui/react@3.0.1, @heroui/styles@3.0.1, tailwindcss@4.2.2, @tailwindcss/vite@4.2.2
+- Added Tailwind Vite plugin to frontend/vite.config.ts plugins array
+- Verified dev server starts cleanly and production build succeeds (tsc + vite build)
+- Files changed: frontend/package.json, frontend/bun.lock, frontend/vite.config.ts
+- **Learnings for future iterations:**
+  - HeroUI v3 packages are now at stable @latest (3.0.1), @beta tag no longer resolves — use @latest
+  - bun 1.3.5 is the installed package manager for frontend; use `bun add` not `npm install`
+  - @tailwindcss/vite plugin goes in the Vite plugins array alongside @vitejs/plugin-react
+  - CSS imports for HeroUI go in the main CSS file: `@import "tailwindcss"` then `@import "@heroui/styles"` (done in US-012)
 ---

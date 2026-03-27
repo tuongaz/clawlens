@@ -151,7 +151,7 @@
         "Typecheck passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Only delete Go files AFTER verifying the Python backend works. Run make build && make run and confirm the dashboard loads with live data before deleting."
     },
     {
@@ -165,7 +165,7 @@
         "Typecheck passes"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "Page may look broken after this step — that's expected since styles haven't been configured yet."
     },
     {
