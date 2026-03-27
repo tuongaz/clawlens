@@ -22,3 +22,14 @@ export interface ProjectGroup {
   path: string
   sessions: Session[]
 }
+
+export interface TokenPeriod {
+  inputTokens: number
+  outputTokens: number
+}
+
+export interface TokenStats {
+  today: TokenPeriod
+  thisWeek: TokenPeriod
+  thisMonth: TokenPeriod
+}
