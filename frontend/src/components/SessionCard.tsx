@@ -189,7 +189,7 @@ export function SessionCard({ session, projectPath }: SessionCardProps) {
         )}
 
         {session.lastAction && (
-          <div className="flex items-center gap-1.5 text-warning text-[11px] font-mono bg-warning/[0.08] py-1 px-2.5 rounded-[var(--radius-sm)] overflow-hidden text-ellipsis whitespace-nowrap">
+          <div className="flex items-start gap-1.5 text-warning text-[11px] font-mono bg-warning/[0.08] py-1 px-2.5 rounded-[var(--radius-sm)] line-clamp-2 break-words">
             <span className="text-[11px] shrink-0">&#9889;</span>
             {session.lastAction}
           </div>
