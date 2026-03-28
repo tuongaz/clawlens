@@ -18,6 +18,8 @@ Started: Sat 28 Mar 2026 19:49:06 AEDT
 - Interruptions detected via `[Request interrupted` in message text or `API Error: Request was aborted.` in content
 - Cache cost saved formula: `cache_read * 1.0 - (cache_read * 0.10 + cache_created * 1.25)` (normalized to input token cost)
 - `command_details` is computed first, then `user_interactions` is derived from it
+- Test fixtures for interruptions must use tool_result content (not plain string) to avoid `_is_real_user_prompt()` treating them as commands
+- Use `patch.object(os.path, "expanduser", return_value=str(tmp_path))` to test `compute_project_stats()` with fixture data
 
 ---
 
@@ -57,4 +59,17 @@ Started: Sat 28 Mar 2026 19:49:06 AEDT
   - Interruption marking requires a second pass through messages since interruption signals appear as non-real-prompt user messages after the command
   - Cache efficiency is capped at 100% with `min(100.0, ...)` to handle edge cases
   - Error text in details is truncated to 200 chars to avoid huge payloads
+---
+
+## 2026-03-28 - US-004
+- Created `tests/test_insights.py` with 44 unit tests covering all stat sections
+- JSONL fixture helpers: `_assistant_line`, `_user_prompt_line`, `_tool_result_line`, `_interruption_line`
+- Shared pytest fixture creates 2 sessions across 2 days with tools, errors, cache tokens, interruptions, multiple models
+- Test classes: TestOverviewStats (5), TestToolStats (3), TestDailyStats (5), TestHourlyPattern (3), TestErrorStats (4), TestModelStats (3), TestUserInteractionStats (6), TestCacheStats (7), TestCommandDetails (4), TestEmptyStats (2), TestTimezoneOffset (2)
+- Files changed: `tests/test_insights.py`, `ralph/prd.json`, `ralph/progress.txt`
+- **Learnings for future iterations:**
+  - Interruption lines in JSONL must be tool_result content (not plain string) to avoid being treated as real user prompts by `_is_real_user_prompt()`
+  - Use `patch.object(os.path, "expanduser", ...)` to redirect `compute_project_stats()` to tmp_path fixtures
+  - Tool error attribution goes to the LAST tool in the preceding assistant message — important when assistant calls multiple tools
+  - `compute_project_stats()` sorts all messages globally by timestamp, so multi-session fixtures interleave chronologically
 ---

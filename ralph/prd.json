@@ -77,7 +77,7 @@
         "`uv run pyright src/clawhawk/` passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Use realistic JSONL fixture data that exercises all stat computations. Keep fixtures minimal but comprehensive. Reference: `sniffly/tests/` for test patterns and fixture data examples."
     },
     {
