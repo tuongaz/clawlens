@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import Markdown from 'react-markdown'
+import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 import { Brain } from 'lucide-react'
 import { Chip, Meter, Spinner } from '@heroui/react'
@@ -299,7 +300,7 @@ function TurnCard({ turn }: { turn: Turn }) {
 
       {turn.userPrompt && (
         <div className="text-sm text-[var(--text-primary)] mb-2 prose prose-invert prose-sm max-w-none break-words">
-          <Markdown remarkPlugins={[remarkGfm]}>{turn.userPrompt}</Markdown>
+          <Markdown remarkPlugins={[remarkGfm, remarkBreaks]}>{turn.userPrompt}</Markdown>
         </div>
       )}
 
@@ -308,17 +309,17 @@ function TurnCard({ turn }: { turn: Turn }) {
           {turn.events.map((ev, i) =>
             ev.kind === 'tool' ? (
               <div key={i} className="flex items-center gap-1.5 text-sm font-mono truncate">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-cyan)] shrink-0" />
-                <span className="text-[var(--accent-cyan)] font-semibold shrink-0">{ev.toolName}</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)] shrink-0" />
+                <span className="text-[var(--text-primary)] font-bold shrink-0">{ev.toolName}</span>
                 {ev.toolDetail && (
                   <span className="text-[var(--text-secondary)] truncate">{ev.toolDetail}</span>
                 )}
               </div>
             ) : (
-              <div key={i} className="flex items-start gap-1.5 text-sm text-[var(--text-primary)] break-words">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-magenta)] shrink-0 mt-[7px]" />
+              <div key={i} className="flex gap-1.5 text-sm text-[var(--text-primary)] break-words">
+                <span className="flex items-center shrink-0 h-[1.5em] leading-[1.5em]"><span className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]" /></span>
                 <div className="prose prose-invert prose-sm max-w-none min-w-0">
-                  <Markdown remarkPlugins={[remarkGfm]}>{ev.text}</Markdown>
+                  <Markdown remarkPlugins={[remarkGfm, remarkBreaks]}>{ev.text}</Markdown>
                 </div>
               </div>
             )
