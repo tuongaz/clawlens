@@ -139,7 +139,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Use existing StatBox or SectionCard components if available. Follow ClawHawk dark theme with CSS variables. Reference: `sniffly/sniffly-site/` for stat card layout and styling patterns."
     },
     {

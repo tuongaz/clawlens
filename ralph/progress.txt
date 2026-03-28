@@ -23,6 +23,8 @@ Started: Sat 28 Mar 2026 19:49:06 AEDT
 - Session → project dir: `find_session_file(sid)` → `os.path.basename(os.path.dirname(fpath))` gives encoded project dir name
 - `compute_project_stats()` returns plain dicts, serialize with `json.dumps()` (not Pydantic)
 - WS endpoints reuse `_load_session_detail()` for activity-based tick speed
+- Insights components live in `frontend/src/components/insights/` with barrel export via `index.ts`
+- Total project cost = `sum(daily_stats[date].cost for date in daily_stats)` — no top-level cost field exists
 
 ---
 
@@ -108,4 +110,20 @@ Started: Sat 28 Mar 2026 19:49:06 AEDT
   - Hook pattern: `useState` for data/loading/error + `useCallback` for onMessage + `useWebSocketConnection` call — identical across all WS hooks
   - Backend sends `{ error: "..." }` on WS errors, so the hook's `onMessage` checks for `data.error` field
   - Hourly pattern keys from Python are integers (0-23), but JSON serializes them as string keys — TS types use `Record<string, ...>`
+---
+
+## 2026-03-28 - US-007
+- Created `InsightsPanel.tsx` — main container with loading/error/empty states using `useInsights` hook
+- Created `StatCards.tsx` — 6 stat cards: User Commands, Interruption Rate, Steps per Command, Tool Use Rate, Project Cost, Cache Efficiency
+- Created `frontend/src/components/insights/index.ts` barrel export
+- Replaced "Insights tab coming soon" placeholder in `SessionDetailPage.tsx` with `<InsightsPanel>`
+- Stat cards render in responsive 3-column (xl) / 2-column (sm) / 1-column (mobile) grid
+- Browser-verified: all 6 cards render with real project data (528 commands, $185 cost, 94.4% cache hit rate, etc.)
+- Files changed: `frontend/src/components/insights/InsightsPanel.tsx`, `frontend/src/components/insights/StatCards.tsx`, `frontend/src/components/insights/index.ts`, `frontend/src/pages/SessionDetailPage.tsx`, `ralph/prd.json`, `ralph/progress.txt`
+- **Learnings for future iterations:**
+  - Existing `StatBox` component is too simple for insights cards (no detail rows) — created a richer `StatCard` local component with label/value/details/info
+  - Total cost is derived by summing `daily_stats[date].cost`, not stored as a top-level field
+  - `useInsights` hook returns project-level stats (all sessions in the project), not single-session stats
+  - `InsightsPanel` connects its own WebSocket when rendered — no lazy loading needed yet (US-013 will add that)
+  - The grid uses `sm:grid-cols-2 xl:grid-cols-3` for responsive stat cards — matches the 3x2 desktop / stack mobile requirement
 ---

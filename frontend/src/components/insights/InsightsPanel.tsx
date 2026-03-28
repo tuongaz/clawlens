@@ -1,0 +1,38 @@
+import { Spinner } from '@heroui/react'
+import { useInsights } from '../../hooks/useInsights'
+import { EmptyState } from '../ui'
+import { StatCards } from './StatCards'
+
+interface InsightsPanelProps {
+  sessionId: string
+}
+
+export function InsightsPanel({ sessionId }: InsightsPanelProps) {
+  const { insights, loading, error } = useInsights(sessionId)
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Spinner size="lg" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="py-8 text-center text-[var(--accent-red)] text-sm">
+        {error}
+      </div>
+    )
+  }
+
+  if (!insights) {
+    return <EmptyState message="No insights data available yet. Start a session to see analytics." />
+  }
+
+  return (
+    <div className="mt-4 space-y-6">
+      <StatCards insights={insights} />
+    </div>
+  )
+}

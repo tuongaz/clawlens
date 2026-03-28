@@ -6,6 +6,7 @@ import { StatusIndicator } from '../components/StatusIndicator'
 import { Header } from '../components/Header'
 import { SectionCard, MetadataField, ErrorAlert, EmptyState, ThemedChip } from '../components/ui'
 import { ConversationTimeline, StatBox, SkillsSubagentsSection, ToolUsageSection } from '../components/session'
+import { InsightsPanel } from '../components/insights'
 import { timeAgo, formatTokens, formatDuration, contextColor, GitBranchIcon, getClientIcon, ideDeepLink } from '../utils'
 
 export function SessionDetailPage() {
@@ -102,9 +103,7 @@ export function SessionDetailPage() {
             </Tabs.Panel>
 
             <Tabs.Panel id="analyse">
-              <div className="flex items-center justify-center py-20 text-[var(--text-secondary)]">
-                Insights tab coming soon
-              </div>
+              <InsightsPanel sessionId={sessionId ?? ''} />
             </Tabs.Panel>
           </Tabs>
         </div>
