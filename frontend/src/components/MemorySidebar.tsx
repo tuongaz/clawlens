@@ -5,6 +5,7 @@ import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
 import { useMemoryFiles } from '../hooks/useMemoryFiles'
+import { ErrorAlert, EmptyState } from './ui'
 
 export function MemoryPanel() {
   const { sessionId } = useParams<{ sessionId: string }>()
@@ -47,16 +48,10 @@ export function MemoryPanel() {
             </div>
           )}
 
-          {error && (
-            <div className="text-[var(--accent-red)] bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] rounded-lg p-4 text-sm">
-              {error}
-            </div>
-          )}
+          {error && <ErrorAlert message={error} />}
 
           {!loading && !error && files.length === 0 && (
-            <div className="text-center text-[var(--text-secondary)] py-12 text-sm">
-              No memory files found
-            </div>
+            <EmptyState message="No memory files found" />
           )}
 
           {!loading && !error && files.length > 0 && (

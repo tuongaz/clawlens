@@ -71,6 +71,88 @@ def load_memory_files(session_id: str) -> list[MemoryFile]:
     return results
 
 
+def _extract_cwd(fpath: str) -> str:
+    """Extract CWD from the first few lines of a JSONL session file."""
+    try:
+        with open(fpath, encoding="utf-8", errors="replace") as f:
+            for i, line in enumerate(f):
+                if i > 30:
+                    break
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    raw = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                cwd = raw.get("cwd", "")
+                if cwd:
+                    return cwd
+    except OSError:
+        pass
+    return ""
+
+
+def _find_skill_file(base_name: str, search_dirs: list[str]) -> str | None:
+    """Search directories for a skill file matching *base_name*."""
+    for dir_path in search_dirs:
+        if not os.path.isdir(dir_path):
+            continue
+        # Direct match: {name}.md
+        candidate = os.path.join(dir_path, f"{base_name}.md")
+        if os.path.isfile(candidate):
+            return candidate
+        # Recursive search for nested skill files
+        for root, _, files in os.walk(dir_path):
+            for fname in files:
+                stem = fname.removesuffix(".md") if fname.endswith(".md") else fname
+                if stem == base_name:
+                    return os.path.join(root, fname)
+    return None
+
+
+def load_skill_content(session_id: str, skill_name: str) -> str | None:
+    """Load the content of a skill file by name for the given session.
+
+    Searches project-level ``.claude/skills/``, global ``~/.claude/skills/``,
+    and plugin skill directories.
+    """
+    fpath = find_session_file(session_id)
+    if fpath is None:
+        return None
+
+    cwd = _extract_cwd(fpath)
+    home = os.path.expanduser("~")
+
+    # Strip plugin prefix for file lookup
+    base_name = skill_name.split(":")[-1] if ":" in skill_name else skill_name
+    plugin_name = skill_name.split(":")[0] if ":" in skill_name else None
+
+    search_dirs: list[str] = []
+
+    # Project-level skills
+    if cwd:
+        search_dirs.append(os.path.join(cwd, ".claude", "skills"))
+
+    # Global skills
+    search_dirs.append(os.path.join(home, ".claude", "skills"))
+
+    # Plugin skills
+    if plugin_name:
+        search_dirs.append(
+            os.path.join(home, ".claude", "plugins", plugin_name, "skills")
+        )
+
+    match = _find_skill_file(base_name, search_dirs)
+    if match is None:
+        return None
+
+    try:
+        return Path(match).read_text(encoding="utf-8")
+    except OSError:
+        return None
+
+
 # ---------------------------------------------------------------------------
 # Text helpers
 # ---------------------------------------------------------------------------

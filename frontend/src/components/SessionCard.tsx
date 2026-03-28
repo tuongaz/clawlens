@@ -1,16 +1,17 @@
-import { Brain } from 'lucide-react'
-import { Card, Chip, Tooltip, Meter } from '@heroui/react'
+import { memo } from 'react'
+import { Card } from '@heroui/react'
 import { useNavigate } from 'react-router-dom'
 import type { Session } from '../types'
-import { timeAgo, formatTokens, contextColor, GitBranchIcon, getClientIcon, ideDeepLink } from '../utils'
+import { timeAgo } from '../utils'
 import { StatusIndicator, ActiveDot } from './StatusIndicator'
+import { GitBranchBadge, MemoryBadge, ClientBadge, ContextMeter } from './metadata'
 
 interface SessionCardProps {
   session: Session
   projectPath: string
 }
 
-export function SessionCard({ session, projectPath }: SessionCardProps) {
+export const SessionCard = memo(function SessionCard({ session, projectPath }: SessionCardProps) {
   const navigate = useNavigate()
   const slug = session.sessionId.slice(0, 8)
   const isActive = session.isActive
@@ -22,10 +23,6 @@ export function SessionCard({ session, projectPath }: SessionCardProps) {
       ? 'border-warning'
       : 'border-success'
     : 'border-[var(--border)]'
-
-  const pct = session.maxContextTokens > 0
-    ? Math.round((session.contextTokens / session.maxContextTokens) * 100)
-    : 0
 
   return (
     <Card
@@ -78,97 +75,15 @@ export function SessionCard({ session, projectPath }: SessionCardProps) {
 
       {hasFooter && (
         <Card.Footer className="flex items-center gap-2 px-4 pt-3 pb-3 border-t border-[var(--border-light)] mt-auto">
-          {session.gitBranch && (
-            <Tooltip>
-              <Tooltip.Trigger>
-                <Chip size="sm" variant="secondary" className="bg-transparent border-0 text-[var(--text-secondary)] font-mono text-[11px] px-0 gap-1 max-w-[200px]">
-                  <GitBranchIcon />
-                  <span className="truncate">{session.gitBranch}</span>
-                </Chip>
-              </Tooltip.Trigger>
-              <Tooltip.Content>
-                <Tooltip.Arrow />
-                Branch: {session.gitBranch}
-              </Tooltip.Content>
-            </Tooltip>
-          )}
-          {session.usesMemory && (
-            <Tooltip>
-              <Tooltip.Trigger>
-                <Chip size="sm" variant="soft" color="accent" className="font-mono text-[10px] text-[var(--accent-magenta)] bg-[rgba(188,140,255,0.1)] border border-[rgba(188,140,255,0.2)] gap-1">
-                  <Brain size={12} /> Memory
-                </Chip>
-              </Tooltip.Trigger>
-              <Tooltip.Content>
-                <Tooltip.Arrow />
-                This session uses memory files
-              </Tooltip.Content>
-            </Tooltip>
-          )}
-          {session.client && (
-            <Tooltip>
-              <Tooltip.Trigger>
-                {(() => {
-                  const link = ideDeepLink(session.client, projectPath)
-                  return link ? (
-                    <a
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Chip size="sm" variant="soft" className="font-mono text-[10px] text-[var(--accent-cyan)] bg-[rgba(88,166,255,0.1)] border border-[rgba(88,166,255,0.2)] gap-1 cursor-pointer hover:bg-[rgba(88,166,255,0.2)] hover:border-[rgba(88,166,255,0.4)] transition-all">
-                        {getClientIcon(session.client)} {session.client}
-                      </Chip>
-                    </a>
-                  ) : (
-                    <Chip size="sm" variant="soft" className="font-mono text-[10px] text-[var(--accent-cyan)] bg-[rgba(88,166,255,0.1)] border border-[rgba(88,166,255,0.2)] gap-1">
-                      {getClientIcon(session.client)} {session.client}
-                    </Chip>
-                  )
-                })()}
-              </Tooltip.Trigger>
-              <Tooltip.Content>
-                <Tooltip.Arrow />
-                {ideDeepLink(session.client, projectPath) ? `Open in ${session.client}` : session.client}
-              </Tooltip.Content>
-            </Tooltip>
-          )}
+          {session.gitBranch && <GitBranchBadge branch={session.gitBranch} />}
+          {session.usesMemory && <MemoryBadge />}
+          {session.client && <ClientBadge client={session.client} projectPath={projectPath} />}
           <div className="flex-1" />
           {session.contextTokens > 0 && (
-            <Tooltip>
-              <Tooltip.Trigger>
-                <div className="cursor-default min-w-[100px] max-w-[140px]">
-                  <Meter
-                    value={pct}
-                    minValue={0}
-                    maxValue={100}
-                    color={contextColor(session.contextTokens, session.maxContextTokens)}
-                    className="w-full"
-                  >
-                    <div className="flex justify-between items-center mb-0.5">
-                      <span className="text-[10px] font-mono text-[var(--text-secondary)]">
-                        {formatTokens(session.contextTokens)} / {formatTokens(session.maxContextTokens)}
-                      </span>
-                      {session.maxContextTokens > 0 && (
-                        <Meter.Output className="text-[10px] font-mono text-[var(--text-secondary)] opacity-70" />
-                      )}
-                    </div>
-                    <Meter.Track className="h-1 bg-white/10 rounded-full">
-                      <Meter.Fill className="rounded-full" />
-                    </Meter.Track>
-                  </Meter>
-                </div>
-              </Tooltip.Trigger>
-              <Tooltip.Content>
-                <Tooltip.Arrow />
-                Context: {formatTokens(session.contextTokens)} / {formatTokens(session.maxContextTokens)} ({pct}%)
-              </Tooltip.Content>
-            </Tooltip>
+            <ContextMeter contextTokens={session.contextTokens} maxContextTokens={session.maxContextTokens} />
           )}
         </Card.Footer>
       )}
     </Card>
   )
-}
+})

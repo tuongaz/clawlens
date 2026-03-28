@@ -14,6 +14,7 @@ from clawhawk.sessions import (
     enrich_session_detail,
     find_session_file,
     load_memory_files,
+    load_skill_content,
     parse_session_detail,
 )
 from clawhawk.ws import session_detail_websocket, session_memory_websocket, websocket_endpoint
@@ -87,6 +88,18 @@ async def get_session_memory(session_id: str) -> JSONResponse:
     )
 
 
+@app.get("/api/sessions/{session_id}/skills/{skill_name:path}")
+async def get_skill_content(session_id: str, skill_name: str) -> JSONResponse:
+    """Return the content of a skill file by name."""
+    content = await asyncio.to_thread(load_skill_content, session_id, skill_name)
+    if content is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Skill '{skill_name}' not found"},
+        )
+    return JSONResponse(content={"name": skill_name, "content": content})
+
+
 @app.get("/{full_path:path}")
 async def spa_fallback(request: Request, full_path: str) -> FileResponse:
     """Serve static files or fall back to index.html for SPA routing."""
@@ -96,7 +109,14 @@ async def spa_fallback(request: Request, full_path: str) -> FileResponse:
         return FileResponse(str(file_path))
 
     # Fall back to index.html for all other paths (SPA routing)
-    return FileResponse(str(_DIST_DIR / "index.html"))
+    return FileResponse(
+        str(_DIST_DIR / "index.html"),
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
 
 
 def main() -> None:
