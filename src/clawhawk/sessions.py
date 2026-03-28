@@ -468,7 +468,7 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
                         current_turn.events.append(
                             TurnEvent(
                                 kind="text",
-                                text=truncate(content, 500),
+                                text=content.strip(),
                             )
                         )
                     elif isinstance(content, list):
@@ -484,11 +484,11 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
                             elif ptype == "tool_use":
                                 # Flush accumulated text before tool.
                                 if text_parts:
-                                    combined = " ".join(text_parts)
+                                    combined = "\n\n".join(text_parts)
                                     current_turn.events.append(
                                         TurnEvent(
                                             kind="text",
-                                            text=truncate(combined, 500),
+                                            text=combined,
                                         )
                                     )
                                     text_parts = []
@@ -514,11 +514,11 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
                                         )
                         # Flush any remaining text after the last tool.
                         if text_parts:
-                            combined = " ".join(text_parts)
+                            combined = "\n\n".join(text_parts)
                             current_turn.events.append(
                                 TurnEvent(
                                     kind="text",
-                                    text=truncate(combined, 500),
+                                    text=combined,
                                 )
                             )
 

@@ -1,10 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { Brain } from 'lucide-react'
 import { Chip, Meter, Spinner } from '@heroui/react'
 import { useSessionDetail } from '../hooks/useSessionDetail'
 import { StatusIndicator, TypingDots, LiveBadge } from '../components/StatusIndicator'
 import type { Turn } from '../types'
+import { Header } from '../components/Header'
 import {
   timeAgo,
   formatTokens,
@@ -21,10 +24,8 @@ export function SessionDetailPage() {
 
   if (loading) {
     return (
-      <div className="w-full px-8 py-6 max-sm:px-4 max-sm:py-4">
-        <Link to="/" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm">
-          &larr; Back to Dashboard
-        </Link>
+      <div className="w-full min-h-screen">
+        <Header />
         <div className="flex items-center justify-center py-20">
           <Spinner size="lg" />
         </div>
@@ -34,12 +35,12 @@ export function SessionDetailPage() {
 
   if (error || !detail) {
     return (
-      <div className="w-full px-8 py-6 max-sm:px-4 max-sm:py-4">
-        <Link to="/" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm">
-          &larr; Back to Dashboard
-        </Link>
-        <div className="mt-8 text-center text-[var(--accent-red)] bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] rounded-lg p-6">
-          {error ?? 'Session not found'}
+      <div className="w-full min-h-screen">
+        <Header />
+        <div className="px-8 py-6 max-sm:px-4 max-sm:py-4">
+          <div className="mt-8 text-center text-[var(--accent-red)] bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] rounded-lg p-6">
+            {error ?? 'Session not found'}
+          </div>
         </div>
       </div>
     )
@@ -53,154 +54,154 @@ export function SessionDetailPage() {
     : 0
 
   return (
-    <div className="w-full px-8 py-6 max-sm:px-4 max-sm:py-4 max-w-5xl mx-auto">
-      <Link to="/" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm">
-        &larr; Back to Dashboard
-      </Link>
+    <div className="w-full min-h-screen">
+      <Header />
 
-      {/* Header */}
-      <div className="mt-4 flex items-center gap-3 flex-wrap">
-        <StatusIndicator isActive={isActive} isWaiting={isWaiting} size={9} />
+      {/* Two-column layout */}
+      <div className="px-8 py-6 max-sm:px-4 max-sm:py-4 max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
 
-        <h1 className="text-xl font-semibold text-[var(--text-bright)]">
-          {detail.name || 'Unnamed Session'}
-        </h1>
-        <span className="text-[var(--text-secondary)] font-mono text-sm">{slug}</span>
-        <span className="text-[var(--text-secondary)] text-sm ml-auto">{timeAgo(detail.timestamp)}</span>
-      </div>
-
-      <div className="flex items-center gap-2 mt-2 flex-wrap">
-        {detail.model && (
-          <Chip size="sm" variant="soft" className="font-mono text-[11px] text-[var(--accent-cyan)] bg-[rgba(88,166,255,0.1)] border border-[rgba(88,166,255,0.2)]">
-            {detail.model}
-          </Chip>
-        )}
-        {detail.version && (
-          <Chip size="sm" variant="secondary" className="font-mono text-[11px] text-[var(--text-secondary)]">
-            v{detail.version}
-          </Chip>
-        )}
-      </div>
-
-      {/* Metadata Grid */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4">
-        {detail.cwd && (
-          <div className="col-span-1 sm:col-span-2">
-            <span className="text-[var(--text-secondary)] text-xs block mb-1">Working Directory</span>
-            <span className="font-mono text-xs text-[var(--text-primary)] break-all">{detail.cwd}</span>
-          </div>
-        )}
-
-        {detail.projectName && (
-          <div>
-            <span className="text-[var(--text-secondary)] text-xs block mb-1">Project</span>
-            <span className="text-sm text-[var(--text-primary)]">{detail.projectName}</span>
-          </div>
-        )}
-
-        {detail.gitBranch && (
-          <div>
-            <span className="text-[var(--text-secondary)] text-xs block mb-1">Branch</span>
-            <span className="inline-flex items-center gap-1.5 font-mono text-xs text-[var(--text-primary)]">
-              <GitBranchIcon /> {detail.gitBranch}
-            </span>
-          </div>
-        )}
-
-        {detail.firstPrompt && (
-          <div className="col-span-1 sm:col-span-2">
-            <span className="text-[var(--text-secondary)] text-xs block mb-1">First Prompt</span>
-            <span className="text-sm text-[var(--text-primary)] whitespace-pre-wrap break-words">{detail.firstPrompt}</span>
-          </div>
-        )}
-
-        {detail.client && (
-          <div>
-            <span className="text-[var(--text-secondary)] text-xs block mb-1">Client</span>
-            <span className="inline-flex items-center gap-1.5 text-sm text-[var(--text-primary)]">
-              {getClientIcon(detail.client)}
-              {(() => {
-                const link = ideDeepLink(detail.client, detail.cwd)
-                return link ? (
-                  <a href={link} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-cyan)] hover:underline">
-                    {detail.client}
-                  </a>
-                ) : (
-                  detail.client
-                )
-              })()}
-            </span>
-          </div>
-        )}
-
-        {detail.usesMemory && (
-          <div>
-            <span className="text-[var(--text-secondary)] text-xs block mb-1">Memory</span>
-            <Chip size="sm" variant="soft" color="accent" className="font-mono text-[10px] text-[var(--accent-magenta)] bg-[rgba(188,140,255,0.1)] border border-[rgba(188,140,255,0.2)] gap-1">
-              <Brain size={12} /> Memory Enabled
-            </Chip>
-          </div>
-        )}
-
-        {detail.contextTokens > 0 && (
-          <div className="col-span-1 sm:col-span-2">
-            <span className="text-[var(--text-secondary)] text-xs block mb-1">Context Usage</span>
-            <div className="max-w-xs">
-              <Meter
-                value={pct}
-                minValue={0}
-                maxValue={100}
-                color={contextColor(detail.contextTokens, detail.maxContextTokens)}
-              >
-                <div className="flex justify-between items-center mb-0.5">
-                  <span className="text-xs font-mono text-[var(--text-secondary)]">
-                    {formatTokens(detail.contextTokens)} / {formatTokens(detail.maxContextTokens)}
-                  </span>
-                  {detail.maxContextTokens > 0 && (
-                    <Meter.Output className="text-xs font-mono text-[var(--text-secondary)] opacity-70" />
-                  )}
-                </div>
-                <Meter.Track className="h-1.5 bg-white/10 rounded-full">
-                  <Meter.Fill className="rounded-full" />
-                </Meter.Track>
-              </Meter>
+        {/* Left: Session Header + Conversation Timeline — on mobile shows second */}
+        <div className="order-2 lg:order-1 min-w-0">
+          {/* Session Header */}
+          <div className="mb-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <StatusIndicator isActive={isActive} isWaiting={isWaiting} size={9} />
+              {detail.name && (
+                <h1 className="text-xl font-semibold text-[var(--text-bright)]">
+                  {detail.name}
+                </h1>
+              )}
+              <span className="text-[var(--text-secondary)] font-mono text-sm">{slug}</span>
+              <span className="text-[var(--text-secondary)] text-sm ml-auto">{timeAgo(detail.timestamp)}</span>
+            </div>
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {detail.model && (
+                <Chip size="sm" variant="soft" className="font-mono text-[11px] text-[var(--accent-cyan)] bg-[rgba(88,166,255,0.1)] border border-[rgba(88,166,255,0.2)]">
+                  {detail.model}
+                </Chip>
+              )}
+              {detail.version && (
+                <Chip size="sm" variant="secondary" className="font-mono text-[11px] text-[var(--text-secondary)]">
+                  v{detail.version}
+                </Chip>
+              )}
             </div>
           </div>
-        )}
+
+          {detail.turns.length > 0 ? (
+            <ConversationTimeline turns={detail.turns} isActive={isActive} isWaiting={isWaiting} />
+          ) : (
+            <div className="text-center text-[var(--text-secondary)] py-12 text-sm bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg">
+              No conversation yet
+            </div>
+          )}
+        </div>
+
+        {/* Right: Session Details — on mobile shows first, sticky on desktop */}
+        <div className="order-1 lg:order-2 lg:sticky lg:top-[60px] lg:self-start lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto space-y-4">
+
+          {/* Metadata */}
+          <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4 space-y-3">
+            {detail.cwd && (
+              <div>
+                <span className="text-[var(--text-secondary)] text-xs block mb-1">Working Directory</span>
+                <span className="font-mono text-xs text-[var(--text-primary)] break-all">{detail.cwd}</span>
+              </div>
+            )}
+
+            {(detail.gitBranch || detail.client) && (
+              <div className="flex items-center justify-between gap-3">
+                {detail.gitBranch && (
+                  <div>
+                    <span className="text-[var(--text-secondary)] text-xs block mb-1">Branch</span>
+                    <span className="inline-flex items-center gap-1.5 font-mono text-xs text-[var(--text-primary)]">
+                      <GitBranchIcon /> {detail.gitBranch}
+                    </span>
+                  </div>
+                )}
+                {detail.client && (
+                  <div className="text-right">
+                    <span className="text-[var(--text-secondary)] text-xs block mb-1">Client</span>
+                    <span className="inline-flex items-center gap-1.5 text-sm text-[var(--text-primary)]">
+                      {getClientIcon(detail.client)}
+                      {(() => {
+                        const link = ideDeepLink(detail.client, detail.cwd)
+                        return link ? (
+                          <a href={link} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-cyan)] hover:underline">
+                            {detail.client}
+                          </a>
+                        ) : (
+                          detail.client
+                        )
+                      })()}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {detail.usesMemory && (
+              <div>
+                <span className="text-[var(--text-secondary)] text-xs block mb-1">Memory</span>
+                <Chip size="sm" variant="soft" color="accent" className="font-mono text-[10px] text-[var(--accent-magenta)] bg-[rgba(188,140,255,0.1)] border border-[rgba(188,140,255,0.2)] gap-1">
+                  <Brain size={12} /> Memory Enabled
+                </Chip>
+              </div>
+            )}
+
+            {detail.contextTokens > 0 && (
+              <div>
+                <span className="text-[var(--text-secondary)] text-xs block mb-1">Context Usage</span>
+                <Meter
+                  value={pct}
+                  minValue={0}
+                  maxValue={100}
+                  color={contextColor(detail.contextTokens, detail.maxContextTokens)}
+                >
+                  <div className="flex justify-between items-center mb-0.5">
+                    <span className="text-xs font-mono text-[var(--text-secondary)]">
+                      {formatTokens(detail.contextTokens)} / {formatTokens(detail.maxContextTokens)}
+                    </span>
+                    {detail.maxContextTokens > 0 && (
+                      <Meter.Output className="text-xs font-mono text-[var(--text-secondary)] opacity-70" />
+                    )}
+                  </div>
+                  <Meter.Track className="h-1.5 bg-white/10 rounded-full">
+                    <Meter.Fill className="rounded-full" />
+                  </Meter.Track>
+                </Meter>
+              </div>
+            )}
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-2">
+            <StatBox label="Input Tokens" value={formatTokens(detail.totalInputTokens)} />
+            <StatBox label="Output Tokens" value={formatTokens(detail.totalOutputTokens)} />
+            <StatBox label="Cache Creation" value={formatTokens(detail.totalCacheCreationTokens)} />
+            <StatBox label="Cache Read" value={formatTokens(detail.totalCacheReadTokens)} />
+            <StatBox label="Duration" value={formatDuration(detail.totalDurationMs)} />
+            <StatBox label="Turns" value={String(detail.turnCount)} />
+          </div>
+
+          {/* Tool Usage */}
+          <ToolUsageSection toolUsage={detail.toolUsage} mcpToolUsage={detail.mcpToolUsage} />
+        </div>
       </div>
-
-      {/* Stats Bar */}
-      <div className="mt-4 flex flex-wrap gap-3">
-        <StatBox label="Input Tokens" value={formatTokens(detail.totalInputTokens)} />
-        <StatBox label="Output Tokens" value={formatTokens(detail.totalOutputTokens)} />
-        <StatBox label="Cache Creation" value={formatTokens(detail.totalCacheCreationTokens)} />
-        <StatBox label="Cache Read" value={formatTokens(detail.totalCacheReadTokens)} />
-        <StatBox label="Duration" value={formatDuration(detail.totalDurationMs)} />
-        <StatBox label="Turns" value={String(detail.turnCount)} />
-      </div>
-
-      {/* Tool Usage */}
-      <ToolUsageSection toolUsage={detail.toolUsage} mcpToolUsage={detail.mcpToolUsage} />
-
-      {/* Conversation Timeline */}
-      {detail.turns.length > 0 && (
-        <ConversationTimeline turns={detail.turns} isActive={isActive} isWaiting={isWaiting} />
-      )}
     </div>
   )
 }
 
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex-1 min-w-[120px] bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-4 py-3 text-center">
+    <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-3 py-2.5 text-center">
       <div className="text-[var(--text-secondary)] text-[11px] mb-1">{label}</div>
-      <div className="text-[var(--text-bright)] font-mono text-lg font-semibold">{value}</div>
+      <div className="text-[var(--text-bright)] font-mono text-base font-semibold">{value}</div>
     </div>
   )
 }
 
 function formatMcpToolName(name: string): string {
-  // mcp__serena__find_symbol → "serena: find_symbol"
   const parts = name.replace(/^mcp__/, '').split('__')
   if (parts.length >= 2) {
     return `${parts[0]}: ${parts.slice(1).join('__')}`
@@ -214,7 +215,7 @@ function ToolBarList({ items, color }: { items: [string, number][]; color: strin
     <div className="space-y-1.5">
       {items.map(([name, count]) => (
         <div key={name} className="flex items-center gap-2">
-          <span className="text-xs text-[var(--text-primary)] font-mono w-[180px] truncate shrink-0" title={name}>
+          <span className="text-xs text-[var(--text-primary)] font-mono w-[140px] truncate shrink-0" title={name}>
             {name}
           </span>
           <div className="flex-1 h-4 bg-white/5 rounded overflow-hidden">
@@ -242,7 +243,6 @@ function ConversationTimeline({ turns, isActive, isWaiting }: { turns: Turn[]; i
   const bottomRef = useRef<HTMLDivElement>(null)
   const prevTurnCountRef = useRef(turns.length)
 
-  // Auto-scroll when new turns appear
   useEffect(() => {
     if (turns.length > prevTurnCountRef.current && bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
@@ -251,7 +251,7 @@ function ConversationTimeline({ turns, isActive, isWaiting }: { turns: Turn[]; i
   }, [turns.length])
 
   return (
-    <div className="mt-6">
+    <div>
       <h3 className="text-sm font-semibold text-[var(--text-bright)] mb-3 flex items-center gap-2">
         Conversation Timeline ({turns.length} turn{turns.length !== 1 ? 's' : ''})
         {isActive && <LiveBadge />}
@@ -283,7 +283,6 @@ function TurnCard({ turn }: { turn: Turn }) {
 
   return (
     <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-4 py-3">
-      {/* Turn header */}
       <div className="flex items-center gap-2 flex-wrap mb-2">
         <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[rgba(88,166,255,0.15)] text-[var(--accent-cyan)] text-[11px] font-mono font-semibold shrink-0">
           {turn.index}
@@ -298,19 +297,17 @@ function TurnCard({ turn }: { turn: Turn }) {
         )}
       </div>
 
-      {/* User prompt */}
       {turn.userPrompt && (
-        <div className="text-sm text-[var(--text-primary)] line-clamp-3 mb-2 whitespace-pre-wrap break-words">
-          {turn.userPrompt}
+        <div className="text-sm text-[var(--text-primary)] mb-2 prose prose-invert prose-sm max-w-none break-words">
+          <Markdown remarkPlugins={[remarkGfm]}>{turn.userPrompt}</Markdown>
         </div>
       )}
 
-      {/* Events (text and tools interleaved chronologically) */}
       {turn.events.length > 0 && (
         <div className="flex flex-col gap-1.5">
           {turn.events.map((ev, i) =>
             ev.kind === 'tool' ? (
-              <div key={i} className="flex items-center gap-1.5 text-[11px] font-mono truncate">
+              <div key={i} className="flex items-center gap-1.5 text-sm font-mono truncate">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-cyan)] shrink-0" />
                 <span className="text-[var(--accent-cyan)] font-semibold shrink-0">{ev.toolName}</span>
                 {ev.toolDetail && (
@@ -318,9 +315,11 @@ function TurnCard({ turn }: { turn: Turn }) {
                 )}
               </div>
             ) : (
-              <div key={i} className="flex items-start gap-1.5 text-xs text-[var(--text-secondary)] line-clamp-2 whitespace-pre-wrap break-words italic">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-magenta)] shrink-0 mt-[5px]" />
-                <span>{ev.text}</span>
+              <div key={i} className="flex items-start gap-1.5 text-sm text-[var(--text-primary)] break-words">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-magenta)] shrink-0 mt-[7px]" />
+                <div className="prose prose-invert prose-sm max-w-none min-w-0">
+                  <Markdown remarkPlugins={[remarkGfm]}>{ev.text}</Markdown>
+                </div>
               </div>
             )
           )}
@@ -338,14 +337,14 @@ function ToolUsageSection({ toolUsage, mcpToolUsage }: { toolUsage: Record<strin
 
   if (builtinEntries.length === 0 && mcpEntries.length === 0) {
     return (
-      <div className="mt-6 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4 text-center text-[var(--text-secondary)] text-sm">
+      <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4 text-center text-[var(--text-secondary)] text-sm">
         No tools used
       </div>
     )
   }
 
   return (
-    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-3">
       {builtinEntries.length > 0 && (
         <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4">
           <h3 className="text-sm font-semibold text-[var(--text-bright)] mb-3">Built-in Tools</h3>
