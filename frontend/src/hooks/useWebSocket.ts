@@ -11,6 +11,7 @@ interface UseWebSocketResult {
   groups: ProjectGroup[]
   stats: TokenStats | null
   connected: boolean
+  loading: boolean
   lastUpdated: Date | null
 }
 
@@ -18,11 +19,13 @@ export function useWebSocket(): UseWebSocketResult {
   const [groups, setGroups] = useState<ProjectGroup[]>([])
   const [stats, setStats] = useState<TokenStats | null>(null)
   const [connected, setConnected] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
   const onMessage = useCallback((data: WebSocketPayload) => {
     setGroups(data.groups)
     setStats(data.stats)
+    setLoading(false)
     setLastUpdated(new Date())
   }, [])
 
@@ -35,5 +38,5 @@ export function useWebSocket(): UseWebSocketResult {
     onOpen,
   })
 
-  return { groups, stats, connected, lastUpdated }
+  return { groups, stats, connected, loading, lastUpdated }
 }
