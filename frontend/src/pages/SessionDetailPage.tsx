@@ -1,6 +1,6 @@
 import { useParams, Outlet, Link } from 'react-router-dom'
 import { Brain } from 'lucide-react'
-import { Chip, Meter, Spinner } from '@heroui/react'
+import { Chip, Meter, Spinner, Tabs } from '@heroui/react'
 import { useSessionDetail } from '../hooks/useSessionDetail'
 import { StatusIndicator } from '../components/StatusIndicator'
 import { Header } from '../components/Header'
@@ -48,45 +48,65 @@ export function SessionDetailPage() {
       <Header />
       <Outlet />
 
-      <div className="px-8 py-6 max-sm:px-4 max-sm:py-4 max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
-        {/* Left: Session Header + Conversation Timeline */}
-        <div className="order-2 lg:order-1 min-w-0">
-          <div className="mb-4">
-            <div className="flex items-center gap-3 flex-wrap">
-              <StatusIndicator isActive={isActive} isWaiting={isWaiting} size={10} />
-              {detail.projectName && (
-                <span className="text-2xl font-bold text-[var(--text-bright)]">
-                  {detail.projectName.split('/').pop() || detail.projectName}
-                </span>
-              )}
-              {detail.projectName && (
-                <span className="text-2xl text-[var(--text-secondary)] font-light">&mdash;</span>
-              )}
-              {detail.name ? (
-                <>
-                  <span className="text-2xl font-semibold text-[var(--text-bright)]">{detail.name}</span>
-                  <span className="text-[var(--text-secondary)] opacity-50 font-mono text-sm">{slug}</span>
-                </>
-              ) : (
-                <span className="text-2xl font-mono font-semibold text-[var(--text-bright)]">{slug}</span>
-              )}
-              <span className="text-[var(--text-secondary)] text-sm ml-auto">{timeAgo(detail.timestamp)}</span>
-            </div>
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              {detail.model && <ThemedChip color="cyan">{detail.model}</ThemedChip>}
-              {detail.version && (
-                <Chip size="sm" variant="secondary" className="font-mono text-[11px] text-[var(--text-secondary)]">
-                  v{detail.version}
-                </Chip>
-              )}
-            </div>
-          </div>
-
-          {detail.turns.length > 0 ? (
-            <ConversationTimeline turns={detail.turns} isActive={isActive} isWaiting={isWaiting} />
-          ) : (
-            <EmptyState message="No conversation yet" />
+      {/* Session Header - full width */}
+      <div className="px-8 py-6 pb-0 max-sm:px-4 max-sm:py-4 max-sm:pb-0 max-w-[1400px] mx-auto">
+        <div className="flex items-center gap-3 flex-wrap">
+          <StatusIndicator isActive={isActive} isWaiting={isWaiting} size={10} />
+          {detail.projectName && (
+            <span className="text-2xl font-bold text-[var(--text-bright)]">
+              {detail.projectName.split('/').pop() || detail.projectName}
+            </span>
           )}
+          {detail.projectName && (
+            <span className="text-2xl text-[var(--text-secondary)] font-light">&mdash;</span>
+          )}
+          {detail.name ? (
+            <>
+              <span className="text-2xl font-semibold text-[var(--text-bright)]">{detail.name}</span>
+              <span className="text-[var(--text-secondary)] opacity-50 font-mono text-sm">{slug}</span>
+            </>
+          ) : (
+            <span className="text-2xl font-mono font-semibold text-[var(--text-bright)]">{slug}</span>
+          )}
+          <div className="flex items-center gap-2 ml-auto">
+            {detail.model && <ThemedChip color="cyan">{detail.model}</ThemedChip>}
+            {detail.version && (
+              <Chip size="sm" variant="secondary" className="font-mono text-[11px] text-[var(--text-secondary)]">
+                v{detail.version}
+              </Chip>
+            )}
+            <span className="text-[var(--text-secondary)] text-sm">{timeAgo(detail.timestamp)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-8 py-6 max-sm:px-4 max-sm:py-4 max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
+        {/* Left: Tabbed Content */}
+        <div className="order-2 lg:order-1 min-w-0">
+          <Tabs variant="secondary" className="w-full">
+            <Tabs.ListContainer>
+              <Tabs.List aria-label="Session tabs">
+                <Tabs.Tab id="session">Session<Tabs.Indicator /></Tabs.Tab>
+                <Tabs.Tab id="analyse">Insights<Tabs.Indicator /></Tabs.Tab>
+              </Tabs.List>
+            </Tabs.ListContainer>
+
+            <Tabs.Panel id="session">
+              <div className="mt-4">
+                {detail.turns.length > 0 ? (
+                  <ConversationTimeline turns={detail.turns} isActive={isActive} isWaiting={isWaiting} />
+                ) : (
+                  <EmptyState message="No conversation yet" />
+                )}
+              </div>
+            </Tabs.Panel>
+
+            <Tabs.Panel id="analyse">
+              <div className="flex items-center justify-center py-20 text-[var(--text-secondary)]">
+                Insights tab coming soon
+              </div>
+            </Tabs.Panel>
+          </Tabs>
         </div>
 
         {/* Right: Session Details */}
