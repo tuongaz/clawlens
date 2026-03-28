@@ -55,7 +55,7 @@
         "`uv run pyright src/clawhawk/` passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Error categories match the 14 categories from the PRD. command_details is needed for the frontend data table and dynamic charts. Reference: `sniffly/sniffly/` for error categorization logic, cache stats computation, and user interaction analysis patterns."
     },
     {

@@ -221,6 +221,11 @@ def compute_project_stats(
     sessions = _compute_session_stats(messages)
     daily_stats = _compute_daily_stats(messages, timezone_offset_minutes)
     hourly_pattern = _compute_hourly_pattern(messages, timezone_offset_minutes)
+    errors = _compute_error_stats(messages)
+    models = _compute_model_stats(messages)
+    command_details = _compute_command_details(messages, timezone_offset_minutes)
+    user_interactions = _compute_user_interaction_stats(command_details)
+    cache = _compute_cache_stats(messages)
 
     return {
         "overview": overview,
@@ -228,6 +233,11 @@ def compute_project_stats(
         "sessions": sessions,
         "daily_stats": daily_stats,
         "hourly_pattern": hourly_pattern,
+        "errors": errors,
+        "models": models,
+        "user_interactions": user_interactions,
+        "cache": cache,
+        "command_details": command_details,
     }
 
 
@@ -265,6 +275,35 @@ def _empty_stats() -> dict[str, Any]:
                 for hour in range(24)
             },
         },
+        "errors": {
+            "total": 0,
+            "error_rate": 0.0,
+            "by_category": {},
+            "details": [],
+        },
+        "models": {},
+        "user_interactions": {
+            "real_user_messages": 0,
+            "commands_requiring_tools": 0,
+            "tool_use_rate": 0.0,
+            "avg_tools_per_command": 0.0,
+            "avg_steps_per_command": 0.0,
+            "avg_tokens_per_command": 0.0,
+            "interruption_rate": 0.0,
+            "tool_count_distribution": {},
+            "model_distribution": {},
+        },
+        "cache": {
+            "total_created": 0,
+            "total_read": 0,
+            "hit_rate": 0.0,
+            "efficiency": 0.0,
+            "tokens_saved": 0,
+            "cost_saved": 0.0,
+            "break_even": False,
+            "roi": 0.0,
+        },
+        "command_details": [],
     }
 
 
@@ -563,4 +602,245 @@ def _compute_hourly_pattern(
             hour: dict(hourly_tokens.get(hour, {"input": 0, "output": 0, "cache_creation": 0, "cache_read": 0}))
             for hour in range(24)
         },
+    }
+
+
+def _compute_error_stats(messages: list[dict[str, Any]]) -> dict[str, Any]:
+    """Compute error statistics: totals, rate, by category, and details."""
+    error_messages = [m for m in messages if m["is_error"]]
+    total = len(error_messages)
+    total_messages = len(messages)
+    error_rate = total / total_messages if total_messages > 0 else 0.0
+
+    by_category: dict[str, int] = defaultdict(int)
+    details: list[dict[str, Any]] = []
+
+    for msg in error_messages:
+        category = _categorize_error(msg["error_text"])
+        by_category[category] += 1
+        details.append({
+            "timestamp": msg["timestamp"],
+            "session_id": msg["session_id"],
+            "category": category,
+            "text": msg["error_text"][:200],
+        })
+
+    return {
+        "total": total,
+        "error_rate": error_rate,
+        "by_category": dict(by_category),
+        "details": details,
+    }
+
+
+def _compute_model_stats(messages: list[dict[str, Any]]) -> dict[str, Any]:
+    """Compute per-model token counts and usage frequency."""
+    model_data: dict[str, dict[str, int]] = defaultdict(
+        lambda: {
+            "count": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cache_creation_tokens": 0,
+            "cache_read_tokens": 0,
+        }
+    )
+
+    for msg in messages:
+        if msg["type"] != "assistant" or not msg["model"]:
+            continue
+        model = msg["model"]
+        model_data[model]["count"] += 1
+        model_data[model]["input_tokens"] += msg["tokens"]["input"]
+        model_data[model]["output_tokens"] += msg["tokens"]["output"]
+        model_data[model]["cache_creation_tokens"] += msg["tokens"]["cache_creation"]
+        model_data[model]["cache_read_tokens"] += msg["tokens"]["cache_read"]
+
+    return {k: dict(v) for k, v in model_data.items()}
+
+
+def _compute_command_details(
+    messages: list[dict[str, Any]],
+    timezone_offset_minutes: int,
+) -> list[dict[str, Any]]:
+    """Build per-command detail records from the message stream.
+
+    A "command" starts with a real user prompt and includes all subsequent
+    assistant messages until the next real user prompt.
+    """
+    commands: list[dict[str, Any]] = []
+    current_command: dict[str, Any] | None = None
+
+    for msg in messages:
+        if msg["type"] == "user" and msg["is_real_prompt"]:
+            # Finalize the previous command if any
+            if current_command is not None:
+                commands.append(current_command)
+
+            # Start a new command
+            current_command = {
+                "user_message": msg["user_text"][:200],
+                "timestamp": msg["timestamp"],
+                "session_id": msg["session_id"],
+                "model": "",
+                "steps": 0,
+                "tools_count": 0,
+                "tokens": 0,
+                "interrupted": False,
+                "tool_names": [],
+            }
+        elif msg["type"] == "assistant" and current_command is not None:
+            current_command["steps"] += 1
+            current_command["tools_count"] += len(msg["tool_names"])
+            current_command["tool_names"].extend(msg["tool_names"])
+            total_tokens = sum(msg["tokens"].values())
+            current_command["tokens"] += total_tokens
+            if not current_command["model"] and msg["model"]:
+                current_command["model"] = msg["model"]
+            # Detect interruption via stop_reason or content pattern
+            if msg["stop_reason"] == "end_turn":
+                pass  # Normal
+            # Check if next message is an interruption (handled below)
+
+    # Don't forget the last command
+    if current_command is not None:
+        commands.append(current_command)
+
+    # Mark interruptions: check if a user message following a command is an
+    # interruption message (not a real prompt). Walk messages again to detect.
+    _mark_interruptions(messages, commands)
+
+    # Deduplicate tool_names to a unique list
+    for cmd in commands:
+        cmd["tool_names"] = list(dict.fromkeys(cmd["tool_names"]))
+
+    return commands
+
+
+def _mark_interruptions(
+    messages: list[dict[str, Any]],
+    commands: list[dict[str, Any]],
+) -> None:
+    """Mark commands that were interrupted by the user.
+
+    An interrupted command is one where a user message with an interruption
+    pattern appears before the next real user prompt.
+    """
+    # Build a set of command timestamps for quick lookup
+    cmd_by_ts: dict[str, dict[str, Any]] = {}
+    for cmd in commands:
+        cmd_by_ts[cmd["timestamp"]] = cmd
+
+    current_cmd_ts: str | None = None
+    for msg in messages:
+        if msg["type"] == "user" and msg["is_real_prompt"]:
+            current_cmd_ts = msg["timestamp"]
+        elif msg["type"] == "user" and not msg["is_real_prompt"]:
+            # Check if this is an interruption message
+            error_text = msg["error_text"] or _extract_error_text(msg["content"])
+            content_str = msg.get("user_text", "")
+            if (
+                _is_interruption_message(error_text)
+                or _is_interruption_message(content_str)
+                or USER_INTERRUPTION_API_ERROR in str(msg["content"])
+            ):
+                if current_cmd_ts and current_cmd_ts in cmd_by_ts:
+                    cmd_by_ts[current_cmd_ts]["interrupted"] = True
+
+
+def _compute_user_interaction_stats(
+    command_details: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Compute user interaction stats from the command details array."""
+    total_commands = len(command_details)
+    if total_commands == 0:
+        return {
+            "real_user_messages": 0,
+            "commands_requiring_tools": 0,
+            "tool_use_rate": 0.0,
+            "avg_tools_per_command": 0.0,
+            "avg_steps_per_command": 0.0,
+            "avg_tokens_per_command": 0.0,
+            "interruption_rate": 0.0,
+            "tool_count_distribution": {},
+            "model_distribution": {},
+        }
+
+    # Filter out interruption-only commands for averages
+    non_interrupted = [c for c in command_details if not c["interrupted"]]
+    active_count = len(non_interrupted) if non_interrupted else total_commands
+
+    commands_with_tools = sum(1 for c in command_details if c["tools_count"] > 0)
+    total_tools = sum(c["tools_count"] for c in command_details)
+    total_steps = sum(c["steps"] for c in command_details)
+    total_tokens = sum(c["tokens"] for c in command_details)
+    interrupted_count = sum(1 for c in command_details if c["interrupted"])
+
+    tool_use_rate = commands_with_tools / total_commands * 100 if total_commands > 0 else 0.0
+    avg_tools = total_tools / active_count if active_count > 0 else 0.0
+    avg_steps = total_steps / active_count if active_count > 0 else 0.0
+    avg_tokens = total_tokens / active_count if active_count > 0 else 0.0
+    interruption_rate = interrupted_count / total_commands * 100 if total_commands > 0 else 0.0
+
+    # Tool count distribution
+    tool_dist: dict[int, int] = defaultdict(int)
+    for cmd in command_details:
+        tool_dist[cmd["tools_count"]] += 1
+
+    # Model distribution
+    model_dist: dict[str, int] = defaultdict(int)
+    for cmd in command_details:
+        if cmd["model"]:
+            model_dist[cmd["model"]] += 1
+
+    return {
+        "real_user_messages": total_commands,
+        "commands_requiring_tools": commands_with_tools,
+        "tool_use_rate": tool_use_rate,
+        "avg_tools_per_command": avg_tools,
+        "avg_steps_per_command": avg_steps,
+        "avg_tokens_per_command": avg_tokens,
+        "interruption_rate": interruption_rate,
+        "tool_count_distribution": dict(tool_dist),
+        "model_distribution": dict(model_dist),
+    }
+
+
+def _compute_cache_stats(messages: list[dict[str, Any]]) -> dict[str, Any]:
+    """Compute cache efficiency statistics."""
+    assistant_msgs = [m for m in messages if m["type"] == "assistant"]
+    total_assistant = len(assistant_msgs)
+
+    total_created = sum(m["tokens"]["cache_creation"] for m in assistant_msgs)
+    total_read = sum(m["tokens"]["cache_read"] for m in assistant_msgs)
+
+    msgs_with_cache_read = sum(
+        1 for m in assistant_msgs if m["tokens"]["cache_read"] > 0
+    )
+
+    hit_rate = (
+        msgs_with_cache_read / total_assistant * 100 if total_assistant > 0 else 0.0
+    )
+    efficiency = (
+        min(100.0, total_read / total_created * 100) if total_created > 0 else 0.0
+    )
+    tokens_saved = total_read - total_created
+
+    # Cost saved: what it would cost as fresh input minus actual cache costs
+    # fresh_cost = total_read * 1.0 (normalized input cost)
+    # actual_cost = total_read * 0.10 + total_created * 1.25
+    # cost_saved = fresh_cost - actual_cost
+    cost_saved = total_read * 1.0 - (total_read * 0.10 + total_created * 1.25)
+
+    break_even = total_read > total_created
+    roi = (total_read / total_created - 1) * 100 if total_created > 0 else 0.0
+
+    return {
+        "total_created": total_created,
+        "total_read": total_read,
+        "hit_rate": hit_rate,
+        "efficiency": efficiency,
+        "tokens_saved": tokens_saved,
+        "cost_saved": cost_saved,
+        "break_even": break_even,
+        "roi": roi,
     }
