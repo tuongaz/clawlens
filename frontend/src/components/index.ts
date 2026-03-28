@@ -5,3 +5,4 @@ export { StatusIndicator, TypingDots, LiveBadge, ActiveDot } from './StatusIndic
 export { MemoryPanel } from './MemorySidebar'
 export { SkillPanel } from './SkillSidebar'
 export { ErrorBoundary } from './ErrorBoundary'
+export { Sidebar } from './Sidebar'
