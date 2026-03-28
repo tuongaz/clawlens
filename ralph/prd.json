@@ -220,7 +220,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "After this story, all 12 charts should be visible in InsightsPanel. Reference: `sniffly/sniffly-site/` for line chart patterns."
     },
     {

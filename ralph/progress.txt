@@ -29,9 +29,10 @@ Started: Sat 28 Mar 2026 19:49:06 AEDT
 - Chart color palette: `#667eea` (blue), `#764ba2` (purple), `#48bb78` (green), `#ef4444` (red), `#f59e0b` (orange), `#ed8936` (amber)
 - Chart tooltip styling: `contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}`
 - `daily_stats[date].cost_breakdown` has `input`, `output`, `cache` (USD) for stacked cost charts; `cost` is the total
-- Dynamic interval bucketing: `bucketCommands()` in `dynamicInterval.ts` — shared by all line charts (US-010, US-011); filters out interrupted commands, < 10 days → 4h buckets, >= 10 days → daily, max 60 points
+- Dynamic interval bucketing: `bucketCommands()` in `dynamicInterval.ts` — shared by all line charts; < 10 days → 4h buckets, >= 10 days → daily, max 60 points. Pass `{ includeInterrupted: true }` for rate charts. `bucketCommandsAndErrors()` merges commands + errors into aligned buckets
 - Line charts use cumulative averages (running total ÷ total commands), not per-bucket averages
 - Recharts `type="monotone"` provides smooth curves; `dot={false}` + `activeDot={{ r: 4 }}` for clean lines with hover dots
+- Dual-axis line charts: use `yAxisId="pct"` (left, `unit="%"`) + `yAxisId="count"` (right, `orientation="right"`) for rate charts combining percentages and counts
 
 ---
 
@@ -187,5 +188,21 @@ Started: Sat 28 Mar 2026 19:49:06 AEDT
   - Cumulative averages (running total / total count) create smooth upward trends rather than noisy per-bucket averages
   - ToolTrendsChart needs taller height (320px vs 280px) to accommodate the legend with up to 10 tool names
   - `interval="preserveStartEnd"` on XAxis lets Recharts auto-thin labels while keeping first/last visible — better than manual sparse label logic
+  - Manual browser verification needed (no browser testing tools available in this iteration)
+---
+
+## 2026-03-28 - US-011
+- Created `InterruptionRateChart.tsx` — dual-axis line chart: cumulative rate % (red, left axis), command count (blue, right axis), interrupted count (orange, right axis)
+- Created `ErrorRateChart.tsx` — dual-axis line chart: cumulative rate % (red, left axis), error count (orange, right axis), assistant messages/commands (blue, right axis)
+- Refactored `dynamicInterval.ts`: extracted `computeInterval()`, `getBucketKey()`, `formatLabel()` as shared helpers; added `includeInterrupted` option to `bucketCommands()`; added `bucketCommandsAndErrors()` for aligning command and error timelines
+- Integrated both charts into InsightsPanel below existing dynamic charts grid
+- Updated barrel export in index.ts
+- All 12 charts now visible in InsightsPanel (7 static + 5 dynamic)
+- Files changed: `frontend/src/components/insights/dynamicInterval.ts`, `frontend/src/components/insights/InterruptionRateChart.tsx`, `frontend/src/components/insights/ErrorRateChart.tsx`, `frontend/src/components/insights/InsightsPanel.tsx`, `frontend/src/components/insights/index.ts`, `ralph/prd.json`, `ralph/progress.txt`
+- **Learnings for future iterations:**
+  - Rate charts need dual Y axes: percentage on left (with `unit="%"`), counts on right — use `yAxisId` to link lines to axes
+  - `bucketCommands({ includeInterrupted: true })` includes interrupted commands for rate calculations; default still excludes them for complexity/length/tool charts
+  - `bucketCommandsAndErrors()` merges two different data sources (commands + errors) into aligned time buckets using the same key function
+  - Error details (`errors.details`) have their own timestamps independent of command timestamps — the `bucketCommandsAndErrors` function handles alignment
   - Manual browser verification needed (no browser testing tools available in this iteration)
 ---
