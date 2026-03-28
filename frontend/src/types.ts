@@ -18,9 +18,11 @@ export interface Session {
   client: string
 }
 
-export interface TurnToolCall {
-  name: string
-  detail: string
+export interface TurnEvent {
+  kind: 'text' | 'tool'
+  text: string       // for kind=="text"
+  toolName: string   // for kind=="tool"
+  toolDetail: string // for kind=="tool"
 }
 
 export interface TurnUsage {
@@ -34,8 +36,7 @@ export interface Turn {
   index: number
   timestamp: string
   userPrompt: string
-  assistantText: string
-  toolCalls: TurnToolCall[]
+  events: TurnEvent[]
   usage: TurnUsage
   durationMs: number
   model: string

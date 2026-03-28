@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from clawhawk.ide import load_ide_map
-from clawhawk.models import Message, ProjectGroup, Session, SessionDetail, Turn, TurnToolCall
+from clawhawk.models import Message, ProjectGroup, Session, SessionDetail, Turn, TurnEvent
 
 logger = logging.getLogger(__name__)
 
@@ -462,10 +462,15 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
                     if ctx > 0:
                         last_context_tokens = ctx
 
-                    # Extract assistant text and tool calls from content.
+                    # Extract assistant text and tool calls in order.
                     content = msg.message.content
                     if isinstance(content, str) and content.strip():
-                        current_turn.assistant_text = truncate(content, 500)
+                        current_turn.events.append(
+                            TurnEvent(
+                                kind="text",
+                                text=truncate(content, 500),
+                            )
+                        )
                     elif isinstance(content, list):
                         text_parts: list[str] = []
                         for part in content:
@@ -477,13 +482,27 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
                                 if isinstance(t, str) and t.strip():
                                     text_parts.append(t.strip())
                             elif ptype == "tool_use":
+                                # Flush accumulated text before tool.
+                                if text_parts:
+                                    combined = " ".join(text_parts)
+                                    current_turn.events.append(
+                                        TurnEvent(
+                                            kind="text",
+                                            text=truncate(combined, 500),
+                                        )
+                                    )
+                                    text_parts = []
                                 name = part.get("name", "")
                                 if isinstance(name, str) and name:
                                     detail = _extract_tool_detail(
                                         name, part.get("input")
                                     )
-                                    current_turn.tool_calls.append(
-                                        TurnToolCall(name=name, detail=detail)
+                                    current_turn.events.append(
+                                        TurnEvent(
+                                            kind="tool",
+                                            tool_name=name,
+                                            tool_detail=detail,
+                                        )
                                     )
                                     if name.startswith("mcp__"):
                                         mcp_tool_usage[name] = (
@@ -493,9 +512,15 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
                                         tool_usage[name] = (
                                             tool_usage.get(name, 0) + 1
                                         )
+                        # Flush any remaining text after the last tool.
                         if text_parts:
                             combined = " ".join(text_parts)
-                            current_turn.assistant_text = truncate(combined, 500)
+                            current_turn.events.append(
+                                TurnEvent(
+                                    kind="text",
+                                    text=truncate(combined, 500),
+                                )
+                            )
 
         # Append the last turn.
         if current_turn is not None:

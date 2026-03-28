@@ -35,11 +35,15 @@ class Session(BaseModel):
     client: str = ""
 
 
-class TurnToolCall(BaseModel):
+class TurnEvent(BaseModel):
+    """A single event in a turn, either assistant text or a tool call."""
+
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
-    name: str = ""
-    detail: str = ""
+    kind: str = ""  # "text" or "tool"
+    text: str = ""  # for kind=="text": the assistant text
+    tool_name: str = ""  # for kind=="tool": tool name
+    tool_detail: str = ""  # for kind=="tool": tool detail
 
 
 class TurnUsage(BaseModel):
@@ -57,8 +61,7 @@ class Turn(BaseModel):
     index: int = 0
     timestamp: str = ""
     user_prompt: str = ""
-    assistant_text: str = ""
-    tool_calls: list[TurnToolCall] = []
+    events: list[TurnEvent] = []
     usage: TurnUsage = TurnUsage()
     duration_ms: int = 0
     model: str = ""
@@ -144,7 +147,7 @@ class MessageUsage(BaseModel):
 class MessageContent(BaseModel):
     role: str = ""
     content: Any = None
-    stop_reason: str = ""
+    stop_reason: str | None = ""
     model: str = ""
     usage: MessageUsage = MessageUsage()
 

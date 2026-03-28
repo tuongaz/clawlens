@@ -305,24 +305,25 @@ function TurnCard({ turn }: { turn: Turn }) {
         </div>
       )}
 
-      {/* Tool calls */}
-      {turn.toolCalls.length > 0 && (
-        <div className="flex flex-col gap-0.5 mb-2">
-          {turn.toolCalls.map((tc, i) => (
-            <div key={i} className="flex items-center gap-1.5 text-[11px] font-mono truncate">
-              <span className="text-[var(--accent-cyan)] font-semibold shrink-0">{tc.name}</span>
-              {tc.detail && (
-                <span className="text-[var(--text-secondary)] truncate">{tc.detail}</span>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Assistant text snippet */}
-      {turn.assistantText && (
-        <div className="text-xs text-[var(--text-secondary)] line-clamp-2 whitespace-pre-wrap break-words italic">
-          {turn.assistantText}
+      {/* Events (text and tools interleaved chronologically) */}
+      {turn.events.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          {turn.events.map((ev, i) =>
+            ev.kind === 'tool' ? (
+              <div key={i} className="flex items-center gap-1.5 text-[11px] font-mono truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-cyan)] shrink-0" />
+                <span className="text-[var(--accent-cyan)] font-semibold shrink-0">{ev.toolName}</span>
+                {ev.toolDetail && (
+                  <span className="text-[var(--text-secondary)] truncate">{ev.toolDetail}</span>
+                )}
+              </div>
+            ) : (
+              <div key={i} className="flex items-start gap-1.5 text-xs text-[var(--text-secondary)] line-clamp-2 whitespace-pre-wrap break-words italic">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-magenta)] shrink-0 mt-[5px]" />
+                <span>{ev.text}</span>
+              </div>
+            )
+          )}
         </div>
       )}
     </div>
