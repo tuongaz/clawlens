@@ -200,7 +200,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Dynamic interval logic is shared across all 5 line charts. Implement as a reusable utility function. Reference: `sniffly/sniffly-site/` for dynamic interval bucketing and line chart patterns."
     },
     {

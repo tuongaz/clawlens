@@ -29,6 +29,9 @@ Started: Sat 28 Mar 2026 19:49:06 AEDT
 - Chart color palette: `#667eea` (blue), `#764ba2` (purple), `#48bb78` (green), `#ef4444` (red), `#f59e0b` (orange), `#ed8936` (amber)
 - Chart tooltip styling: `contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}`
 - `daily_stats[date].cost_breakdown` has `input`, `output`, `cache` (USD) for stacked cost charts; `cost` is the total
+- Dynamic interval bucketing: `bucketCommands()` in `dynamicInterval.ts` — shared by all line charts (US-010, US-011); filters out interrupted commands, < 10 days → 4h buckets, >= 10 days → daily, max 60 points
+- Line charts use cumulative averages (running total ÷ total commands), not per-bucket averages
+- Recharts `type="monotone"` provides smooth curves; `dot={false}` + `activeDot={{ r: 4 }}` for clean lines with hover dots
 
 ---
 
@@ -167,5 +170,22 @@ Started: Sat 28 Mar 2026 19:49:06 AEDT
   - TokenOverTimeChart groups input+cache_creation+cache_read as "Input" and output as "Output" for cleaner stacking
   - DailyCostChart uses optional chaining `entry.cost_breakdown?.input ?? 0` for backward compat with data before the breakdown was added
   - All chart components follow the same pattern: filter empty data → return null, otherwise render ChartCard wrapping ResponsiveContainer
+  - Manual browser verification needed (no browser testing tools available in this iteration)
+---
+
+## 2026-03-28 - US-010
+- Created `dynamicInterval.ts` — shared utility for bucketing `command_details` by dynamic time intervals (< 10 days → 4h, >= 10 days → daily, max 60 points)
+- Created `CommandComplexityChart.tsx` — dual-line chart: cumulative avg tools/cmd (blue) + avg steps/cmd (amber)
+- Created `CommandLengthChart.tsx` — single-line chart: cumulative avg tokens/cmd (purple)
+- Created `ToolTrendsChart.tsx` — multi-line chart: cumulative usage for top 10 tools, one line per tool
+- Integrated all 3 dynamic charts into InsightsPanel below the static charts grid
+- Updated barrel export in index.ts
+- Files changed: `frontend/src/components/insights/dynamicInterval.ts`, `frontend/src/components/insights/CommandComplexityChart.tsx`, `frontend/src/components/insights/CommandLengthChart.tsx`, `frontend/src/components/insights/ToolTrendsChart.tsx`, `frontend/src/components/insights/InsightsPanel.tsx`, `frontend/src/components/insights/index.ts`, `ralph/prd.json`, `ralph/progress.txt`
+- **Learnings for future iterations:**
+  - `bucketCommands()` filters out interrupted commands and sorts by timestamp — all line charts should use this shared utility
+  - Recharts `type="monotone"` provides smooth curves without needing a separate tension parameter (Chart.js uses tension 0.3, Recharts uses monotone interpolation)
+  - Cumulative averages (running total / total count) create smooth upward trends rather than noisy per-bucket averages
+  - ToolTrendsChart needs taller height (320px vs 280px) to accommodate the legend with up to 10 tool names
+  - `interval="preserveStartEnd"` on XAxis lets Recharts auto-thin labels while keeping first/last visible — better than manual sparse label logic
   - Manual browser verification needed (no browser testing tools available in this iteration)
 ---
