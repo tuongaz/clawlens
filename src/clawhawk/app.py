@@ -10,14 +10,12 @@ from fastapi import FastAPI, Request, WebSocket
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from clawhawk.ide import load_ide_map
 from clawhawk.sessions import (
-    _load_active_info,
-    decode_project_path,
+    enrich_session_detail,
     find_session_file,
     parse_session_detail,
 )
-from clawhawk.ws import websocket_endpoint
+from clawhawk.ws import session_detail_websocket, websocket_endpoint
 
 # Resolve web/dist relative to the project root (3 levels up from src/clawhawk/app.py)
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -45,6 +43,11 @@ async def ws_route(ws: WebSocket) -> None:
     await websocket_endpoint(ws)
 
 
+@app.websocket("/ws/sessions/{session_id}")
+async def ws_session_detail_route(ws: WebSocket, session_id: str) -> None:
+    await session_detail_websocket(ws, session_id)
+
+
 @app.get("/api/sessions/{session_id}")
 async def get_session_detail(session_id: str) -> JSONResponse:
     """Return full session detail for a given session ID."""
@@ -62,31 +65,7 @@ async def get_session_detail(session_id: str) -> JSONResponse:
             content={"error": f"Failed to parse session {session_id}"},
         )
 
-    # Enrich with active status, IDE client, memory flag, project name.
-    home = os.path.expanduser("~")
-    active_info = await asyncio.to_thread(_load_active_info, home)
-    detail.is_active = detail.session_id in active_info.session_ids
-
-    ide_dir = os.path.join(home, ".claude", "ide")
-    ide_map = await asyncio.to_thread(load_ide_map, ide_dir)
-    for folder, client in ide_map.items():
-        if detail.cwd == folder or detail.cwd.startswith(folder + os.sep):
-            detail.client = client
-            break
-
-    dir_name = os.path.basename(os.path.dirname(fpath))
-    detail.project_name = decode_project_path(dir_name)
-
-    mem_dir = os.path.join(home, ".claude", "projects", dir_name, "memory")
-    try:
-        for entry in os.listdir(mem_dir):
-            if entry.endswith(".md") and not os.path.isdir(
-                os.path.join(mem_dir, entry)
-            ):
-                detail.uses_memory = True
-                break
-    except OSError:
-        pass
+    await asyncio.to_thread(enrich_session_detail, detail, fpath)
 
     return JSONResponse(
         content=detail.model_dump(by_alias=True, mode="json"),

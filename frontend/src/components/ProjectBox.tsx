@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Card, Button } from '@heroui/react'
 import type { ProjectGroup } from '../types'
 import { SessionCard } from './SessionCard'
+import { StatusIndicator } from './StatusIndicator'
 
 interface ProjectBoxProps {
   group: ProjectGroup
@@ -29,11 +30,7 @@ export function ProjectBox({ group }: ProjectBoxProps) {
   return (
     <Card className="bg-transparent border-0 shadow-none p-5">
       <Card.Header className="flex-row items-center gap-3 p-0 pb-1">
-        {hasActive ? (
-          <span className="inline-block w-2 h-2 rounded-full bg-success shadow-[0_0_8px_rgba(63,185,80,0.5)] shrink-0 animate-pulse-blink" />
-        ) : (
-          <span className="inline-block w-2 h-2 rounded-full bg-[var(--text-secondary)] opacity-40 shrink-0" />
-        )}
+        <StatusIndicator isActive={hasActive} isWaiting={false} size={8} />
         <span className="font-mono text-lg font-bold text-[var(--text-bright)] whitespace-nowrap">
           {name}
         </span>

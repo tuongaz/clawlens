@@ -3,6 +3,7 @@ import { Card, Chip, Tooltip, Meter } from '@heroui/react'
 import { useNavigate } from 'react-router-dom'
 import type { Session } from '../types'
 import { timeAgo, formatTokens, contextColor, GitBranchIcon, getClientIcon, ideDeepLink } from '../utils'
+import { StatusIndicator, ActiveDot } from './StatusIndicator'
 
 interface SessionCardProps {
   session: Session
@@ -32,17 +33,7 @@ export function SessionCard({ session, projectPath }: SessionCardProps) {
       onClick={() => navigate(`/session/${session.sessionId}`)}
     >
       <Card.Header className="flex-row items-center gap-2 px-4 pt-3 pb-0">
-        {isActive && !isWaiting ? (
-          <span className="inline-block w-[7px] h-[7px] rounded-full bg-success shadow-[0_0_8px_rgba(63,185,80,0.5)] animate-pulse-blink shrink-0" />
-        ) : isActive && isWaiting ? (
-          <span className="inline-flex items-center text-warning animate-pulse-blink" title="Waiting for input">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm3.75-1a.75.75 0 0 1 .75-.75h4a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1-.75-.75Zm0 3a.75.75 0 0 1 .75-.75h2a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1-.75-.75Z" />
-            </svg>
-          </span>
-        ) : (
-          <span className="inline-block w-[7px] h-[7px] rounded-full bg-[var(--text-secondary)] opacity-40 shrink-0" />
-        )}
+        <StatusIndicator isActive={isActive} isWaiting={isWaiting} size={7} />
         {session.name ? (
           <>
             <span className={`font-semibold text-xs truncate max-w-[160px] ${isActive ? 'text-[var(--text-bright)]' : 'text-[var(--text-primary)]'}`}>
@@ -76,7 +67,7 @@ export function SessionCard({ session, projectPath }: SessionCardProps) {
         {session.lastAction && (
           <div className="flex items-center gap-1.5 text-warning text-[11px] font-mono bg-warning/[0.08] py-1 px-2.5 rounded-[var(--radius-sm)] line-clamp-2 break-words">
             {isActive && !isWaiting ? (
-              <span className="inline-block w-[6px] h-[6px] rounded-full bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.5)] animate-pulse-blink shrink-0" />
+              <ActiveDot />
             ) : (
               <span className="text-[11px] shrink-0">&#9889;</span>
             )}

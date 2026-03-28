@@ -39,6 +39,7 @@ body {
   50% { opacity: 0.25; }
 }
 
-.animate-pulse-blink {
-  animation: pulse-blink 2s ease-in-out infinite;
+@keyframes dot-blink {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
 }

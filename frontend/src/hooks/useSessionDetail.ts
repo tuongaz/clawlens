@@ -11,69 +11,59 @@ export function useSessionDetail(sessionId: string): UseSessionDetailResult {
   const [detail, setDetail] = useState<SessionDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const abortRef = useRef<AbortController | null>(null)
+  const wsRef = useRef<WebSocket | null>(null)
+  const backoffRef = useRef(1000)
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const fetchDetail = useCallback(async (isInitial: boolean) => {
-    abortRef.current?.abort()
-    const controller = new AbortController()
-    abortRef.current = controller
+  const connect = useCallback(() => {
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const ws = new WebSocket(`${protocol}//${location.host}/ws/sessions/${sessionId}`)
+    wsRef.current = ws
 
-    if (isInitial) setLoading(true)
+    ws.onopen = () => {
+      backoffRef.current = 1000
+    }
 
-    try {
-      const res = await fetch(`/api/sessions/${sessionId}`, {
-        signal: controller.signal,
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => null)
-        throw new Error(body?.detail ?? `Failed to load session (${res.status})`)
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        if (data.error) {
+          setError(data.error)
+          setLoading(false)
+          return
+        }
+        setDetail(data as SessionDetail)
+        setError(null)
+        setLoading(false)
+      } catch {
+        // ignore malformed messages
       }
-      const data: SessionDetail = await res.json()
-      setDetail(data)
-      setError(null)
-      return data
-    } catch (err: unknown) {
-      if (err instanceof DOMException && err.name === 'AbortError') return null
-      const message = err instanceof Error ? err.message : 'Unknown error'
-      if (isInitial) setError(message)
-      return null
-    } finally {
-      if (isInitial) setLoading(false)
+    }
+
+    ws.onclose = () => {
+      wsRef.current = null
+      const delay = backoffRef.current
+      backoffRef.current = Math.min(backoffRef.current * 2, 10000)
+      reconnectTimerRef.current = setTimeout(connect, delay)
+    }
+
+    ws.onerror = () => {
+      ws.close()
     }
   }, [sessionId])
 
   useEffect(() => {
-    let mounted = true
-
-    const init = async () => {
-      const data = await fetchDetail(true)
-      if (!mounted) return
-
-      // Start polling if session is active
-      if (data?.isActive) {
-        intervalRef.current = setInterval(async () => {
-          const updated = await fetchDetail(false)
-          // Stop polling if session became inactive
-          if (updated && !updated.isActive && intervalRef.current) {
-            clearInterval(intervalRef.current)
-            intervalRef.current = null
-          }
-        }, 3000)
-      }
-    }
-
-    init()
+    connect()
 
     return () => {
-      mounted = false
-      abortRef.current?.abort()
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current)
+      }
+      if (wsRef.current) {
+        wsRef.current.close()
       }
     }
-  }, [fetchDetail])
+  }, [connect])
 
   return { detail, loading, error }
 }

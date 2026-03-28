@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Brain } from 'lucide-react'
 import { Chip, Meter, Spinner } from '@heroui/react'
 import { useSessionDetail } from '../hooks/useSessionDetail'
+import { StatusIndicator, TypingDots, LiveBadge } from '../components/StatusIndicator'
 import type { Turn } from '../types'
 import {
   timeAgo,
@@ -59,17 +60,7 @@ export function SessionDetailPage() {
 
       {/* Header */}
       <div className="mt-4 flex items-center gap-3 flex-wrap">
-        {isActive && !isWaiting ? (
-          <span className="inline-block w-[9px] h-[9px] rounded-full bg-success shadow-[0_0_8px_rgba(63,185,80,0.5)] animate-pulse-blink shrink-0" />
-        ) : isActive && isWaiting ? (
-          <span className="inline-flex items-center text-warning animate-pulse-blink shrink-0" title="Waiting for input">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm3.75-1a.75.75 0 0 1 .75-.75h4a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1-.75-.75Zm0 3a.75.75 0 0 1 .75-.75h2a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1-.75-.75Z" />
-            </svg>
-          </span>
-        ) : (
-          <span className="inline-block w-[9px] h-[9px] rounded-full bg-[var(--text-secondary)] opacity-40 shrink-0" />
-        )}
+        <StatusIndicator isActive={isActive} isWaiting={isWaiting} size={9} />
 
         <h1 className="text-xl font-semibold text-[var(--text-bright)]">
           {detail.name || 'Unnamed Session'}
@@ -193,7 +184,7 @@ export function SessionDetailPage() {
 
       {/* Conversation Timeline */}
       {detail.turns.length > 0 && (
-        <ConversationTimeline turns={detail.turns} />
+        <ConversationTimeline turns={detail.turns} isActive={isActive} isWaiting={isWaiting} />
       )}
     </div>
   )
@@ -244,15 +235,26 @@ function ToolBarList({ items, color }: { items: [string, number][]; color: strin
 
 const INITIAL_TURNS_SHOWN = 30
 
-function ConversationTimeline({ turns }: { turns: Turn[] }) {
+function ConversationTimeline({ turns, isActive, isWaiting }: { turns: Turn[]; isActive: boolean; isWaiting: boolean }) {
   const [showAll, setShowAll] = useState(false)
   const visibleTurns = showAll ? turns : turns.slice(0, INITIAL_TURNS_SHOWN)
   const hasMore = turns.length > INITIAL_TURNS_SHOWN
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const prevTurnCountRef = useRef(turns.length)
+
+  // Auto-scroll when new turns appear
+  useEffect(() => {
+    if (turns.length > prevTurnCountRef.current && bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+    prevTurnCountRef.current = turns.length
+  }, [turns.length])
 
   return (
     <div className="mt-6">
-      <h3 className="text-sm font-semibold text-[var(--text-bright)] mb-3">
+      <h3 className="text-sm font-semibold text-[var(--text-bright)] mb-3 flex items-center gap-2">
         Conversation Timeline ({turns.length} turn{turns.length !== 1 ? 's' : ''})
+        {isActive && <LiveBadge />}
       </h3>
       <div className="space-y-2">
         {visibleTurns.map((turn) => (
@@ -267,6 +269,8 @@ function ConversationTimeline({ turns }: { turns: Turn[] }) {
           Show all {turns.length} turns ({turns.length - INITIAL_TURNS_SHOWN} more)
         </button>
       )}
+      {isActive && <TypingDots isWaiting={isWaiting} />}
+      <div ref={bottomRef} />
     </div>
   )
 }
@@ -301,20 +305,16 @@ function TurnCard({ turn }: { turn: Turn }) {
         </div>
       )}
 
-      {/* Tool call chips */}
+      {/* Tool calls */}
       {turn.toolCalls.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-2">
+        <div className="flex flex-col gap-0.5 mb-2">
           {turn.toolCalls.map((tc, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-[rgba(88,166,255,0.08)] text-[var(--accent-cyan)] border border-[rgba(88,166,255,0.15)]"
-              title={tc.detail}
-            >
-              <span className="font-semibold">{tc.name}</span>
+            <div key={i} className="flex items-center gap-1.5 text-[11px] font-mono truncate">
+              <span className="text-[var(--accent-cyan)] font-semibold shrink-0">{tc.name}</span>
               {tc.detail && (
-                <span className="text-[var(--text-secondary)] max-w-[200px] truncate">: {tc.detail}</span>
+                <span className="text-[var(--text-secondary)] truncate">{tc.detail}</span>
               )}
-            </span>
+            </div>
           ))}
         </div>
       )}

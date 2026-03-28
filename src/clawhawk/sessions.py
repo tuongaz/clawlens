@@ -105,6 +105,8 @@ def extract_user_text(content: object) -> str:
 
     # User messages typically have string content.
     if isinstance(content, str):
+        if _is_system_boilerplate(content):
+            return ""
         return clean_command_text(content)
 
     # Sometimes content is an array of parts.
@@ -113,7 +115,7 @@ def extract_user_text(content: object) -> str:
             if isinstance(part, dict):
                 if part.get("type") == "text":
                     text = part.get("text")
-                    if isinstance(text, str):
+                    if isinstance(text, str) and not _is_system_boilerplate(text):
                         return clean_command_text(text)
 
     return ""
@@ -154,18 +156,26 @@ def _extract_tool_detail(tool_name: str, tool_input: object) -> str:
     return ""
 
 
+def _is_system_boilerplate(text: str) -> bool:
+    """Return True if the text is a system-generated boilerplate message."""
+    return "<local-command-caveat>" in text
+
+
 def _is_real_user_prompt(content: object) -> bool:
     """Check if user message content is a real prompt, not just tool results.
 
     A real user prompt is a string or a list containing at least one text part.
     Lists containing only tool_result parts are tool-result feedback, not new turns.
+    System boilerplate messages (e.g. local-command-caveat) are also excluded.
     """
     if isinstance(content, str):
-        return bool(content.strip())
+        return bool(content.strip()) and not _is_system_boilerplate(content)
     if isinstance(content, list):
         for part in content:
             if isinstance(part, dict) and part.get("type") == "text":
-                return True
+                text = part.get("text", "")
+                if isinstance(text, str) and not _is_system_boilerplate(text):
+                    return True
         return False
     return False
 
@@ -522,6 +532,106 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
         turn_count=len(turns),
         turns=turns,
     )
+
+
+def _is_session_active(
+    session_id: str, cwd: str, fpath: str, active_info: ActiveInfo
+) -> bool:
+    """Determine if a session is active using the same logic as the dashboard.
+
+    A session is active if it is registered in the session registry OR if it is
+    the newest JSONL in a cwd that has a running Claude process (handles /clear
+    creating a new session ID not yet in the registry).
+    """
+    # Direct registry match.
+    is_registered = session_id in active_info.session_ids
+
+    # Cwd fallback: check if this session's cwd has a running process AND this
+    # file is the newest JSONL in that directory.
+    is_newest_in_active_cwd = False
+    if cwd in active_info.running_cwds:
+        project_dir = os.path.dirname(fpath)
+        try:
+            best_mtime = 0.0
+            best_sid = ""
+            for name in os.listdir(project_dir):
+                if not name.endswith(".jsonl"):
+                    continue
+                p = os.path.join(project_dir, name)
+                try:
+                    mt = os.stat(p).st_mtime
+                except OSError:
+                    continue
+                if mt > best_mtime:
+                    best_mtime = mt
+                    best_sid = name.removesuffix(".jsonl")
+            is_newest_in_active_cwd = best_sid == session_id
+        except OSError:
+            pass
+
+    # If registered, check it hasn't been superseded by a newer session in the
+    # same cwd from the same PID (the /clear case).
+    if is_registered and is_newest_in_active_cwd:
+        return True
+    if is_registered:
+        # Check for stale: if a newer session exists for the same cwd and PID.
+        pid = active_info.session_pid.get(session_id)
+        if pid is not None:
+            project_dir = os.path.dirname(fpath)
+            try:
+                my_mtime = os.stat(fpath).st_mtime
+                for name in os.listdir(project_dir):
+                    if not name.endswith(".jsonl"):
+                        continue
+                    p = os.path.join(project_dir, name)
+                    other_sid = name.removesuffix(".jsonl")
+                    if other_sid == session_id:
+                        continue
+                    try:
+                        mt = os.stat(p).st_mtime
+                    except OSError:
+                        continue
+                    if mt > my_mtime:
+                        # Newer file exists — if it's unregistered or same PID,
+                        # this session is stale.
+                        other_pid = active_info.session_pid.get(other_sid)
+                        if other_pid is None or other_pid == pid:
+                            return False
+            except OSError:
+                pass
+        return True
+
+    return is_newest_in_active_cwd
+
+
+def enrich_session_detail(detail: SessionDetail, fpath: str) -> None:
+    """Enrich a parsed SessionDetail with active status, IDE client, memory flag, and project name."""
+    home = os.path.expanduser("~")
+    active_info = _load_active_info(home)
+    detail.is_active = _is_session_active(
+        detail.session_id, detail.cwd, fpath, active_info
+    )
+
+    ide_dir = os.path.join(home, ".claude", "ide")
+    ide_map = load_ide_map(ide_dir)
+    for folder, client in ide_map.items():
+        if detail.cwd == folder or detail.cwd.startswith(folder + os.sep):
+            detail.client = client
+            break
+
+    dir_name = os.path.basename(os.path.dirname(fpath))
+    detail.project_name = decode_project_path(dir_name)
+
+    mem_dir = os.path.join(home, ".claude", "projects", dir_name, "memory")
+    try:
+        for entry in os.listdir(mem_dir):
+            if entry.endswith(".md") and not os.path.isdir(
+                os.path.join(mem_dir, entry)
+            ):
+                detail.uses_memory = True
+                break
+    except OSError:
+        pass
 
 
 # ---------------------------------------------------------------------------
