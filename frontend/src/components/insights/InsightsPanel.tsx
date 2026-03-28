@@ -1,4 +1,4 @@
-import { Spinner, Skeleton } from '@heroui/react'
+import { Skeleton } from '@heroui/react'
 import { useInsights } from '../../hooks/useInsights'
 import { EmptyState } from '../ui'
 import { StatCards } from './StatCards'
