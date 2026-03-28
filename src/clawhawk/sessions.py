@@ -93,6 +93,26 @@ def _extract_cwd(fpath: str) -> str:
     return ""
 
 
+def _plugin_skill_dirs(home: str, plugin_name: str) -> list[str]:
+    """Return skill directories for a plugin by reading installed_plugins.json."""
+    dirs: list[str] = []
+    plugins_json = os.path.join(home, ".claude", "plugins", "installed_plugins.json")
+    try:
+        data = json.loads(Path(plugins_json).read_text(encoding="utf-8"))
+        for key, entries in data.get("plugins", {}).items():
+            # key format: "pluginName@marketplace"
+            if key.split("@")[0] == plugin_name and isinstance(entries, list):
+                for entry in entries:
+                    install_path = entry.get("installPath", "")
+                    if install_path:
+                        dirs.append(os.path.join(install_path, "skills"))
+    except (OSError, json.JSONDecodeError, KeyError):
+        pass
+    # Fallback: legacy flat path
+    dirs.append(os.path.join(home, ".claude", "plugins", plugin_name, "skills"))
+    return dirs
+
+
 def _find_skill_file(base_name: str, search_dirs: list[str]) -> str | None:
     """Search directories for a skill file matching *base_name*."""
     for dir_path in search_dirs:
@@ -102,8 +122,18 @@ def _find_skill_file(base_name: str, search_dirs: list[str]) -> str | None:
         candidate = os.path.join(dir_path, f"{base_name}.md")
         if os.path.isfile(candidate):
             return candidate
+        # Directory-based skill: {name}/SKILL.md
+        candidate = os.path.join(dir_path, base_name, "SKILL.md")
+        if os.path.isfile(candidate):
+            return candidate
         # Recursive search for nested skill files
-        for root, _, files in os.walk(dir_path):
+        for root, dirs, files in os.walk(dir_path):
+            # Check if a subdirectory name matches and contains SKILL.md
+            for d in dirs:
+                if d == base_name:
+                    skill_md = os.path.join(root, d, "SKILL.md")
+                    if os.path.isfile(skill_md):
+                        return skill_md
             for fname in files:
                 stem = fname.removesuffix(".md") if fname.endswith(".md") else fname
                 if stem == base_name:
@@ -137,11 +167,9 @@ def load_skill_content(session_id: str, skill_name: str) -> str | None:
     # Global skills
     search_dirs.append(os.path.join(home, ".claude", "skills"))
 
-    # Plugin skills
+    # Plugin skills – resolve via installed_plugins.json for real install paths
     if plugin_name:
-        search_dirs.append(
-            os.path.join(home, ".claude", "plugins", plugin_name, "skills")
-        )
+        search_dirs.extend(_plugin_skill_dirs(home, plugin_name))
 
     match = _find_skill_file(base_name, search_dirs)
     if match is None:
