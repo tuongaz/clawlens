@@ -9,6 +9,9 @@ import { ModelUsageChart } from './ModelUsageChart'
 import { ErrorDistributionChart } from './ErrorDistributionChart'
 import { TokenOverTimeChart } from './TokenOverTimeChart'
 import { DailyCostChart } from './DailyCostChart'
+import { CommandComplexityChart } from './CommandComplexityChart'
+import { CommandLengthChart } from './CommandLengthChart'
+import { ToolTrendsChart } from './ToolTrendsChart'
 
 interface InsightsPanelProps {
   sessionId: string
@@ -49,6 +52,12 @@ export function InsightsPanel({ sessionId }: InsightsPanelProps) {
         <ErrorDistributionChart errors={insights.errors} />
         <TokenOverTimeChart dailyStats={insights.daily_stats} />
         <DailyCostChart dailyStats={insights.daily_stats} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <CommandComplexityChart commandDetails={insights.command_details} />
+        <CommandLengthChart commandDetails={insights.command_details} />
+        <ToolTrendsChart commandDetails={insights.command_details} />
       </div>
     </div>
   )
