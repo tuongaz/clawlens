@@ -110,7 +110,7 @@ export function SessionDetailPage() {
                 )}
                 {detail.client && (
                   <MetadataField label="Client" info="The IDE or terminal client connected to this session.">
-                    <span className="inline-flex items-center gap-1.5 text-sm text-[var(--text-primary)]">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-primary)]">
                       {getClientIcon(detail.client)}
                       {(() => {
                         const link = ideDeepLink(detail.client, detail.cwd)
