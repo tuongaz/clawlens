@@ -56,7 +56,7 @@ export function InsightsPanel({ sessionId }: InsightsPanelProps) {
 
   if (error) {
     return (
-      <div className="py-8 text-center text-[var(--accent-red)] text-sm">
+      <div className="py-8 text-center text-[var(--accent-red)] text-base">
         {error}
       </div>
     )

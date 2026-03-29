@@ -31,7 +31,7 @@ export function ProjectBox({ group, displayName }: ProjectBoxProps) {
         <div className="flex items-center gap-3 w-full bg-[var(--bg-secondary)] rounded-lg px-4 py-3">
           <StatusIndicator isActive={hasActive} isWaiting={false} size={8} />
           <div className="flex flex-col min-w-0">
-            <span className="font-mono text-lg font-bold text-[var(--text-bright)] whitespace-nowrap">
+            <span className="font-mono text-xl font-bold text-[var(--text-bright)] whitespace-nowrap">
               {name}
             </span>
             <span className="font-mono text-[15px] text-[var(--text-secondary)] overflow-hidden text-ellipsis whitespace-nowrap">
@@ -47,7 +47,7 @@ export function ProjectBox({ group, displayName }: ProjectBoxProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-mono text-sm text-[var(--text-secondary)] border-[var(--border)] hover:text-[var(--text-primary)] hover:border-[var(--accent-cyan)]"
+                className="font-mono text-base text-[var(--text-secondary)] border-[var(--border)] hover:text-[var(--text-primary)] hover:border-[var(--accent-cyan)]"
                 onPress={() => setExpanded(true)}
               >
                 Show {hiddenCount} more
@@ -57,7 +57,7 @@ export function ProjectBox({ group, displayName }: ProjectBoxProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-mono text-sm text-[var(--text-secondary)] border-[var(--border)] hover:text-[var(--text-primary)] hover:border-[var(--accent-cyan)]"
+                className="font-mono text-base text-[var(--text-secondary)] border-[var(--border)] hover:text-[var(--text-primary)] hover:border-[var(--accent-cyan)]"
                 onPress={() => setExpanded(false)}
               >
                 Show less
@@ -66,7 +66,7 @@ export function ProjectBox({ group, displayName }: ProjectBoxProps) {
             <Button
               variant="outline"
               size="sm"
-              className="font-mono text-sm text-[var(--accent-cyan)] border-[var(--accent-cyan)]/30 hover:bg-[var(--accent-cyan)]/10 hover:border-[var(--accent-cyan)]"
+              className="font-mono text-base text-[var(--accent-cyan)] border-[var(--accent-cyan)]/30 hover:bg-[var(--accent-cyan)]/10 hover:border-[var(--accent-cyan)]"
               onPress={() => navigate(`/insights/${encodeURIComponent(group.projectName)}`)}
             >
               Insights

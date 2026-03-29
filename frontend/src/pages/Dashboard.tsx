@@ -105,8 +105,8 @@ export function Dashboard() {
               ['Month', stats.thisMonth],
             ] as const).map(([label, period]) => (
               <div key={label} className="flex flex-col items-center gap-0.5">
-                <span className="text-[12px] font-[var(--font-mono)] text-[var(--text-secondary)] uppercase tracking-wider">{label}</span>
-                <span className="text-sm font-[var(--font-mono)] font-semibold text-[var(--text-primary)]">
+                <span className="text-[14px] font-[var(--font-mono)] text-[var(--text-secondary)] uppercase tracking-wider">{label}</span>
+                <span className="text-base font-[var(--font-mono)] font-semibold text-[var(--text-primary)]">
                   {formatTokens(period.inputTokens + period.outputTokens)}
                 </span>
               </div>
@@ -114,7 +114,7 @@ export function Dashboard() {
           </div>
         )}
 
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex items-center gap-3 text-base">
           <Switch
             size="lg"
             isSelected={activeOnly}
