@@ -31,7 +31,7 @@ export function Sidebar({ onClose, icon, title, footer, children }: SidebarProps
         {/* Header */}
         <div className="flex items-center gap-2 px-5 py-4 border-b border-[var(--border)] shrink-0">
           {icon}
-          <h2 className="text-sm font-semibold text-[var(--text-bright)] flex-1 truncate">
+          <h2 className="text-base font-semibold text-[var(--text-bright)] flex-1 truncate">
             {title}
           </h2>
           <button

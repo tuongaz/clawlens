@@ -40,7 +40,7 @@ export function ConversationTimeline({ turns, isActive, isWaiting }: Conversatio
       {hasMore && !showAll && (
         <button
           onClick={() => setShowAll(true)}
-          className="mt-3 w-full py-2 text-sm text-[var(--accent-cyan)] bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg hover:bg-[rgba(88,166,255,0.1)] transition-colors cursor-pointer"
+          className="mt-3 w-full py-2 text-base text-[var(--accent-cyan)] bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg hover:bg-[rgba(88,166,255,0.1)] transition-colors cursor-pointer"
         >
           Show all {turns.length} turns ({turns.length - INITIAL_TURNS_SHOWN} more)
         </button>

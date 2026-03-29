@@ -41,14 +41,14 @@ export function TurnCard({ turn, isFirst, defaultExpanded }: TurnCardProps) {
         className="flex items-center gap-2 flex-wrap cursor-pointer select-none"
         onClick={() => setExpanded(!expanded)}
       >
-        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[13px] font-mono font-semibold shrink-0 ${isFirst ? 'bg-[rgba(88,166,255,0.25)] text-[var(--accent-cyan)]' : 'bg-[rgba(88,166,255,0.15)] text-[var(--accent-cyan)]'}`}>
+        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[15px] font-mono font-semibold shrink-0 ${isFirst ? 'bg-[rgba(88,166,255,0.25)] text-[var(--accent-cyan)]' : 'bg-[rgba(88,166,255,0.15)] text-[var(--accent-cyan)]'}`}>
           {turn.index}
         </span>
         {timeStr && (
-          <span className="text-[var(--text-secondary)] text-sm font-mono">{timeStr}</span>
+          <span className="text-[var(--text-secondary)] text-base font-mono">{timeStr}</span>
         )}
         {turn.durationMs > 0 && (
-          <span className="text-[var(--text-secondary)] text-[13px] font-mono">
+          <span className="text-[var(--text-secondary)] text-[15px] font-mono">
             {formatDuration(turn.durationMs)}
           </span>
         )}
@@ -59,7 +59,7 @@ export function TurnCard({ turn, isFirst, defaultExpanded }: TurnCardProps) {
       </div>
 
       {!expanded && (
-        <div className="mt-2 text-sm text-[var(--text-primary)] font-mono whitespace-pre-line line-clamp-2">
+        <div className="mt-2 text-base text-[var(--text-primary)] font-mono whitespace-pre-line line-clamp-2">
           {getPreviewText(turn)}
         </div>
       )}
@@ -67,7 +67,7 @@ export function TurnCard({ turn, isFirst, defaultExpanded }: TurnCardProps) {
       {expanded && (
         <div className="mt-2">
           {turn.userPrompt && (
-            <div className="text-sm text-[var(--text-primary)] mb-2 break-words">
+            <div className="text-base text-[var(--text-primary)] mb-2 break-words">
               <TaskNotificationContent text={turn.userPrompt} />
             </div>
           )}
@@ -76,7 +76,7 @@ export function TurnCard({ turn, isFirst, defaultExpanded }: TurnCardProps) {
             <div className="flex flex-col gap-1.5">
               {turn.events.map((ev, i) =>
                 ev.kind === 'tool' ? (
-                  <div key={i} className="flex items-center gap-1.5 text-sm font-mono truncate">
+                  <div key={i} className="flex items-center gap-1.5 text-base font-mono truncate">
                     <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)] shrink-0" />
                     <span className="text-[var(--text-primary)] font-bold shrink-0">{ev.toolName}</span>
                     {ev.toolDetail && (
@@ -84,7 +84,7 @@ export function TurnCard({ turn, isFirst, defaultExpanded }: TurnCardProps) {
                     )}
                   </div>
                 ) : (
-                  <div key={i} className="flex gap-1.5 text-sm text-[var(--text-primary)] break-words">
+                  <div key={i} className="flex gap-1.5 text-base text-[var(--text-primary)] break-words">
                     <span className="flex items-center shrink-0 h-[1.5em] leading-[1.5em]"><span className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]" /></span>
                     <TaskNotificationContent text={ev.text} />
                   </div>

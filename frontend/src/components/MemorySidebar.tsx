@@ -26,14 +26,14 @@ export function MemoryPanel() {
       title="Memory Files"
       footer={
         !loading && files.length > 0 ? (
-          <span className="text-[13px] text-[var(--text-secondary)]">
+          <span className="text-[15px] text-[var(--text-secondary)]">
             {files.length} memory file{files.length !== 1 ? 's' : ''}
           </span>
         ) : undefined
       }
     >
       {loading && (
-        <div className="flex items-center justify-center py-12 text-[var(--text-secondary)] text-sm">
+        <div className="flex items-center justify-center py-12 text-[var(--text-secondary)] text-base">
           Loading memory files...
         </div>
       )}
@@ -60,13 +60,13 @@ export function MemoryPanel() {
                     <ChevronRight size={14} className="text-[var(--text-secondary)] shrink-0" />
                   )}
                   <FileText size={14} className="text-[var(--accent-magenta)] shrink-0" />
-                  <span className="text-sm font-mono text-[var(--text-primary)] truncate">
+                  <span className="text-base font-mono text-[var(--text-primary)] truncate">
                     {file.name}
                   </span>
                 </button>
                 {isExpanded && (
                   <div className="px-4 pb-3 pt-1 border-t border-[var(--border)] bg-[var(--bg-secondary)]">
-                    <div className="prose prose-invert prose-sm max-w-none text-sm [&_p]:text-sm [&_li]:text-sm [&_h1]:text-sm [&_h2]:text-sm [&_h3]:text-sm [&_code]:text-[13px] [&_pre]:text-[13px]">
+                    <div className="prose prose-invert prose-sm max-w-none text-base [&_p]:text-base [&_li]:text-base [&_h1]:text-base [&_h2]:text-base [&_h3]:text-base [&_code]:text-[15px] [&_pre]:text-[15px]">
                       <Markdown remarkPlugins={[remarkGfm, remarkBreaks]}>{file.content}</Markdown>
                     </div>
                   </div>

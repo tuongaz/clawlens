@@ -48,7 +48,7 @@ export function SkillPanel() {
       title={<span className="font-mono">{decodedName}</span>}
     >
       {loading && (
-        <div className="flex items-center justify-center py-12 text-[var(--text-secondary)] text-sm">
+        <div className="flex items-center justify-center py-12 text-[var(--text-secondary)] text-base">
           Loading skill...
         </div>
       )}
@@ -56,7 +56,7 @@ export function SkillPanel() {
       {error && <ErrorAlert message={error} />}
 
       {!loading && !error && content != null && (
-        <div className="prose prose-invert prose-sm max-w-none text-sm [&_p]:text-sm [&_li]:text-sm [&_h1]:text-sm [&_h2]:text-sm [&_h3]:text-sm [&_code]:text-[13px] [&_pre]:text-[13px]">
+        <div className="prose prose-invert prose-sm max-w-none text-base [&_p]:text-base [&_li]:text-base [&_h1]:text-base [&_h2]:text-base [&_h3]:text-base [&_code]:text-[15px] [&_pre]:text-[15px]">
           <Markdown remarkPlugins={[remarkGfm, remarkBreaks]}>{content}</Markdown>
         </div>
       )}

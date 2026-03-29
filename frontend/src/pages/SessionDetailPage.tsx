@@ -53,29 +53,29 @@ export function SessionDetailPage() {
         <div className="flex items-center gap-3 flex-wrap">
           <StatusIndicator isActive={isActive} isWaiting={isWaiting} size={10} />
           {detail.projectName && (
-            <span className="text-2xl font-bold text-[var(--text-bright)]">
+            <span className="text-3xl font-bold text-[var(--text-bright)]">
               {detail.projectName.split('/').pop() || detail.projectName}
             </span>
           )}
           {detail.projectName && (
-            <span className="text-2xl text-[var(--text-secondary)] font-light">&mdash;</span>
+            <span className="text-3xl text-[var(--text-secondary)] font-light">&mdash;</span>
           )}
           {detail.name ? (
             <>
-              <span className="text-2xl font-semibold text-[var(--text-bright)]">{detail.name}</span>
-              <span className="text-[var(--text-secondary)] opacity-50 font-mono text-sm">{slug}</span>
+              <span className="text-3xl font-semibold text-[var(--text-bright)]">{detail.name}</span>
+              <span className="text-[var(--text-secondary)] opacity-50 font-mono text-base">{slug}</span>
             </>
           ) : (
-            <span className="text-2xl font-mono font-semibold text-[var(--text-bright)]">{slug}</span>
+            <span className="text-3xl font-mono font-semibold text-[var(--text-bright)]">{slug}</span>
           )}
           <div className="flex items-center gap-2 ml-auto">
             {detail.model && <ThemedChip color="cyan">{detail.model}</ThemedChip>}
             {detail.version && (
-              <Chip size="sm" variant="secondary" className="font-mono text-[13px] text-[var(--text-secondary)]">
+              <Chip size="sm" variant="secondary" className="font-mono text-[15px] text-[var(--text-secondary)]">
                 v{detail.version}
               </Chip>
             )}
-            <span className="text-[var(--text-secondary)] text-sm">{timeAgo(detail.timestamp)}</span>
+            <span className="text-[var(--text-secondary)] text-base">{timeAgo(detail.timestamp)}</span>
           </div>
         </div>
       </div>
@@ -95,7 +95,7 @@ export function SessionDetailPage() {
           <SectionCard className="space-y-3">
             {detail.cwd && (
               <MetadataField label="Working Directory" info="The filesystem path where this Claude Code session is running.">
-                <span className="font-mono text-sm text-[var(--text-primary)] break-all">{detail.cwd}</span>
+                <span className="font-mono text-base text-[var(--text-primary)] break-all">{detail.cwd}</span>
               </MetadataField>
             )}
 
@@ -103,14 +103,14 @@ export function SessionDetailPage() {
               <div className="flex items-center justify-between gap-3">
                 {detail.gitBranch && (
                   <MetadataField label="Branch" info="The active git branch in the working directory.">
-                    <span className="inline-flex items-center gap-1.5 font-mono text-sm text-[var(--text-primary)]">
+                    <span className="inline-flex items-center gap-1.5 font-mono text-base text-[var(--text-primary)]">
                       <GitBranchIcon /> {detail.gitBranch}
                     </span>
                   </MetadataField>
                 )}
                 {detail.client && (
                   <MetadataField label="Client" info="The IDE or terminal client connected to this session.">
-                    <span className="inline-flex items-center gap-1.5 text-sm text-[var(--text-primary)]">
+                    <span className="inline-flex items-center gap-1.5 text-base text-[var(--text-primary)]">
                       {getClientIcon(detail.client)}
                       {(() => {
                         const link = ideDeepLink(detail.client, detail.cwd)
@@ -131,7 +131,7 @@ export function SessionDetailPage() {
             {detail.usesMemory && (
               <MetadataField label="Memory" info="Whether Claude's persistent memory system is enabled for this project.">
                 <Link to={`/session/${detail.sessionId}/memory`}>
-                  <ThemedChip color="magenta" interactive className="text-[12px]">
+                  <ThemedChip color="magenta" interactive className="text-[14px]">
                     <Brain size={12} /> Memory Enabled
                   </ThemedChip>
                 </Link>
@@ -147,11 +147,11 @@ export function SessionDetailPage() {
                   color={contextColor(detail.contextTokens, detail.maxContextTokens)}
                 >
                   <div className="flex justify-between items-center mb-0.5">
-                    <span className="text-sm font-mono text-[var(--text-secondary)]">
+                    <span className="text-base font-mono text-[var(--text-secondary)]">
                       {formatTokens(detail.contextTokens)} / {formatTokens(detail.maxContextTokens)}
                     </span>
                     {detail.maxContextTokens > 0 && (
-                      <Meter.Output className="text-sm font-mono text-[var(--text-secondary)] opacity-70" />
+                      <Meter.Output className="text-base font-mono text-[var(--text-secondary)] opacity-70" />
                     )}
                   </div>
                   <Meter.Track className="h-1.5 bg-white/10 rounded-full">
