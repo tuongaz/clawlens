@@ -799,6 +799,10 @@ def _load_active_info(home: str) -> ActiveInfo:
     Returns the set of session IDs whose registered PID is still alive.
     When multiple registry entries share the same PID (e.g. after /rename or
     /clear), only the most recently modified entry is kept.
+
+    For resumed sessions (where the registry session ID has no matching JSONL
+    file), resolves the actual session by finding the most recently modified
+    JSONL file updated after the process started.
     """
     info = ActiveInfo(session_ids=set())
     sessions_dir = os.path.join(home, ".claude", "sessions")
@@ -809,8 +813,8 @@ def _load_active_info(home: str) -> ActiveInfo:
         return info
 
     # Collect all live registry entries grouped by PID so we can deduplicate.
-    # pid -> list of (file_mod_time, session_id)
-    pid_entries: dict[int, list[tuple[float, str]]] = {}
+    # pid -> list of (file_mod_time, session_id, started_at_sec)
+    pid_entries: dict[int, list[tuple[float, str, float]]] = {}
 
     for name in entries:
         if not name.endswith(".json"):
@@ -825,6 +829,7 @@ def _load_active_info(home: str) -> ActiveInfo:
 
         session_id = data.get("sessionId", "")
         pid = data.get("pid", 0)
+        started_at_ms = data.get("startedAt", 0)
         if not session_id or not pid:
             continue
 
@@ -834,13 +839,56 @@ def _load_active_info(home: str) -> ActiveInfo:
         except (OSError, ProcessLookupError):
             continue
 
-        pid_entries.setdefault(pid, []).append((stat.st_mtime, session_id))
+        started_at = started_at_ms / 1000 if isinstance(started_at_ms, (int, float)) else 0.0
+        pid_entries.setdefault(pid, []).append((stat.st_mtime, session_id, started_at))
+
+    projects_dir = os.path.join(home, ".claude", "projects")
+    matched_jsonls: set[str] = set()
+    unresolved_started_ats: list[float] = []
 
     # For each PID, only keep the most recently modified registry entry.
     for pid, elist in pid_entries.items():
         elist.sort(reverse=True)  # newest first by mod_time
-        _, session_id = elist[0]
-        info.session_ids.add(session_id)
+        _, session_id, started_at = elist[0]
+
+        # Check if this session ID has a corresponding JSONL file.
+        pattern = os.path.join(projects_dir, "*", f"{session_id}.jsonl")
+        matches = glob.glob(pattern)
+        if matches:
+            info.session_ids.add(session_id)
+            matched_jsonls.update(matches)
+        else:
+            # Resumed session – registry ID doesn't match any JSONL file.
+            unresolved_started_ats.append(started_at)
+
+    # Resolve resumed sessions by finding JSONL files modified after
+    # the process started (excluding files already matched to other PIDs).
+    # A staleness threshold prevents matching JSONL files that haven't been
+    # written to recently — this handles cases where the process is alive but
+    # the session was closed (e.g. process didn't exit cleanly).
+    _STALE_THRESHOLD = 300  # 5 minutes
+    if unresolved_started_ats:
+        now = time.time()
+        all_jsonl = glob.glob(os.path.join(projects_dir, "*", "*.jsonl"))
+        for started_at in unresolved_started_ats:
+            best: tuple[float, str, str] | None = None  # (mtime, session_id, path)
+            for jpath in all_jsonl:
+                if jpath in matched_jsonls:
+                    continue
+                if os.sep + "subagents" + os.sep in jpath:
+                    continue
+                try:
+                    mtime = os.stat(jpath).st_mtime
+                except OSError:
+                    continue
+                if started_at and mtime >= started_at and (now - mtime) < _STALE_THRESHOLD:
+                    if best is None or mtime > best[0]:
+                        sid = os.path.basename(jpath).removesuffix(".jsonl")
+                        best = (mtime, sid, jpath)
+
+            if best is not None:
+                info.session_ids.add(best[1])
+                matched_jsonls.add(best[2])
 
     return info
 
