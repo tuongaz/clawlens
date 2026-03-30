@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { ChevronUp, ChevronDown } from 'lucide-react'
-import type { Turn } from '../../types'
+import { ChevronUp, ChevronDown, X } from 'lucide-react'
+import type { Turn, UserImage } from '../../types'
 import { TaskNotificationContent } from './TaskNotificationContent'
 
 interface TurnCardProps {
@@ -26,6 +26,42 @@ function getPreviewText(turn: Turn): string {
   const preview = lines.slice(0, 2).join('\n')
   const hasMore = lines.length > 2 || turn.events.length > 0
   return hasMore ? preview + ' …' : preview
+}
+
+function ImageThumbnail({ image }: { image: UserImage }) {
+  const [modalOpen, setModalOpen] = useState(false)
+  const src = `data:${image.mediaType};base64,${image.data}`
+
+  return (
+    <>
+      <img
+        src={src}
+        alt="User attached image"
+        className="max-h-[120px] rounded border border-[var(--border)] object-contain cursor-pointer hover:border-[var(--accent-cyan)] transition-colors"
+        onClick={() => setModalOpen(true)}
+      />
+      {modalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+          onClick={() => setModalOpen(false)}
+        >
+          <div className="relative max-w-[90vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="absolute -top-3 -right-3 p-1 rounded-full bg-[var(--bg-secondary)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer z-10"
+              onClick={() => setModalOpen(false)}
+            >
+              <X size={16} />
+            </button>
+            <img
+              src={src}
+              alt="User attached image"
+              className="max-w-[90vw] max-h-[90vh] rounded-lg border border-[var(--border)] object-contain"
+            />
+          </div>
+        </div>
+      )}
+    </>
+  )
 }
 
 export function TurnCard({ turn, isFirst, defaultExpanded, showWorking }: TurnCardProps) {
@@ -54,6 +90,14 @@ export function TurnCard({ turn, isFirst, defaultExpanded, showWorking }: TurnCa
           {turn.userPrompt && (
             <div className="text-base text-[var(--text-primary)] mb-2 break-words">
               <TaskNotificationContent text={turn.userPrompt} />
+            </div>
+          )}
+
+          {turn.images && turn.images.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {turn.images.map((img, i) => (
+                <ImageThumbnail key={i} image={img} />
+              ))}
             </div>
           )}
 

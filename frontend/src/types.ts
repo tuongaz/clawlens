@@ -27,6 +27,11 @@ export interface TurnEvent {
   toolExtra: string  // for kind=="tool": extra info (e.g. bash command)
 }
 
+export interface UserImage {
+  mediaType: string  // e.g. "image/png"
+  data: string       // base64-encoded image data
+}
+
 export interface TurnUsage {
   inputTokens: number
   outputTokens: number
@@ -38,6 +43,7 @@ export interface Turn {
   index: number
   timestamp: string
   userPrompt: string
+  images: UserImage[]
   events: TurnEvent[]
   usage: TurnUsage
   durationMs: number

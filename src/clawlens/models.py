@@ -57,12 +57,22 @@ class TurnUsage(BaseModel):
     cache_read_input_tokens: int = 0
 
 
+class UserImage(BaseModel):
+    """An image attached to a user message."""
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    media_type: str = ""  # e.g. "image/png"
+    data: str = ""  # base64-encoded image data
+
+
 class Turn(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     index: int = 0
     timestamp: str = ""
     user_prompt: str = ""
+    images: list[UserImage] = []
     events: list[TurnEvent] = []
     usage: TurnUsage = TurnUsage()
     duration_ms: int = 0

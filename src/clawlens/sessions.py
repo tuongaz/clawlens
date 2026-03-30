@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from clawlens.ide import load_ide_pid_map, resolve_client_for_pid
-from clawlens.models import MemoryFile, Message, ProjectGroup, Session, SessionDetail, SubagentInvocation, Turn, TurnEvent
+from clawlens.models import MemoryFile, Message, ProjectGroup, Session, SessionDetail, SubagentInvocation, Turn, TurnEvent, UserImage
 
 logger = logging.getLogger(__name__)
 
@@ -371,6 +371,24 @@ def _is_real_user_prompt(content: object) -> bool:
     return False
 
 
+def _extract_user_images(content: object) -> list[UserImage]:
+    """Extract images from a user message content field."""
+    if not isinstance(content, list):
+        return []
+    images: list[UserImage] = []
+    for part in content:
+        if not isinstance(part, dict):
+            continue
+        if part.get("type") == "image":
+            source = part.get("source")
+            if isinstance(source, dict) and source.get("type") == "base64":
+                media_type = source.get("media_type", "")
+                data = source.get("data", "")
+                if isinstance(media_type, str) and isinstance(data, str) and data:
+                    images.append(UserImage(media_type=media_type, data=data))
+    return images
+
+
 def extract_action(content: object) -> str:
     """Extract the last action description from an assistant message's content."""
     if content is None:
@@ -629,6 +647,7 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
                             index=turn_index,
                             timestamp=msg.timestamp or last_ts,
                             user_prompt=extract_user_text(msg.message.content),
+                            images=_extract_user_images(msg.message.content),
                         )
 
                 # Assistant message handling.
