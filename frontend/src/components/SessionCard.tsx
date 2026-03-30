@@ -2,7 +2,7 @@ import { memo } from 'react'
 import { Card } from '@heroui/react'
 import { useNavigate } from 'react-router-dom'
 import type { Session } from '../types'
-import { timeAgo } from '../utils'
+import { timeAgo, formatElapsed } from '../utils'
 import { StatusIndicator, ActiveDot } from './StatusIndicator'
 import { GitBranchBadge, MemoryBadge, ClientBadge, ContextMeter } from './metadata'
 
@@ -46,7 +46,8 @@ export const SessionCard = memo(function SessionCard({ session, projectPath }: S
           </span>
         )}
         <span className="ml-auto text-[var(--text-secondary)] text-sm font-mono">
-          {timeAgo(session.timestamp)}
+          {session.startTimestamp && formatElapsed(session.startTimestamp, session.timestamp)}{' '}
+          ({timeAgo(session.timestamp)})
         </span>
       </Card.Header>
 

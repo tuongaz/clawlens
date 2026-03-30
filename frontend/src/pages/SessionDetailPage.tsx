@@ -7,7 +7,7 @@ import { StatusIndicator } from '../components/StatusIndicator'
 import { Header } from '../components/Header'
 import { SectionCard, MetadataField, ErrorAlert, EmptyState, ThemedChip } from '../components/ui'
 import { ConversationTimeline, TurnTimeline, StatBox, SkillsSubagentsSection, ToolUsageSection } from '../components/session'
-import { timeAgo, formatTokens, formatDuration, contextColor, GitBranchIcon, getClientIcon, ideDeepLink } from '../utils'
+import { timeAgo, formatTokens, formatDuration, formatElapsed, contextColor, GitBranchIcon, getClientIcon, ideDeepLink } from '../utils'
 
 export function SessionDetailPage() {
   const { sessionId } = useParams<{ sessionId: string }>()
@@ -78,7 +78,10 @@ export function SessionDetailPage() {
                 v{detail.version}
               </Chip>
             )}
-            <span className="text-[var(--text-secondary)] text-base">{timeAgo(detail.timestamp)}</span>
+            <span className="text-[var(--text-secondary)] text-base font-mono">
+              {detail.startTimestamp && formatElapsed(detail.startTimestamp, detail.timestamp)}{' '}
+              ({timeAgo(detail.timestamp)})
+            </span>
           </div>
         </div>
       </div>

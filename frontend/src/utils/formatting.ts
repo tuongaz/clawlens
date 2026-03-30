@@ -39,3 +39,19 @@ export function formatDuration(ms: number): string {
   if (minutes === 0) return `${seconds}s`
   return `${minutes}m ${seconds}s`
 }
+
+export function formatElapsed(startTimestamp: string, endTimestamp: string): string {
+  if (!startTimestamp || !endTimestamp) return ''
+  const startMs = new Date(startTimestamp).getTime()
+  const endMs = new Date(endTimestamp).getTime()
+  if (Number.isNaN(startMs) || Number.isNaN(endMs)) return ''
+  const diff = endMs - startMs
+  if (diff < 0) return ''
+  const totalSeconds = Math.floor(diff / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  if (hours > 0) return `${hours}h ${minutes}m`
+  if (minutes > 0) return `${minutes}m ${seconds}s`
+  return `${seconds}s`
+}

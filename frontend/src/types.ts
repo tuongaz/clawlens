@@ -5,6 +5,7 @@ export interface Session {
   cwd: string
   gitBranch: string
   timestamp: string  // ISO 8601
+  startTimestamp: string  // ISO 8601 - first message timestamp
   firstPrompt: string
   lastUserPrompt: string
   lastAction: string

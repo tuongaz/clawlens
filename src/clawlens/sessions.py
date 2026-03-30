@@ -402,6 +402,7 @@ def parse_session(fpath: str) -> Session | None:
     first_prompt = ""
     last_user_prompt = ""
     last_action = ""
+    first_ts = ""
     last_ts = ""
     waiting_for_input = False
     last_model = ""
@@ -433,6 +434,8 @@ def parse_session(fpath: str) -> Session | None:
                 if msg.git_branch:
                     git_branch = msg.git_branch
                 if msg.timestamp:
+                    if not first_ts:
+                        first_ts = msg.timestamp
                     last_ts = msg.timestamp
                 if msg.version:
                     version = msg.version
@@ -488,6 +491,7 @@ def parse_session(fpath: str) -> Session | None:
         cwd=cwd,
         git_branch=git_branch,
         timestamp=last_ts,
+        start_timestamp=first_ts,
         first_prompt=first_prompt,
         last_user_prompt=last_user_prompt,
         last_action=truncate(last_action, 160),
@@ -509,6 +513,7 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
     session_name = ""
     cwd = ""
     git_branch = ""
+    first_ts = ""
     last_ts = ""
     version = ""
     first_prompt = ""
@@ -570,6 +575,8 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
                 if msg.git_branch:
                     git_branch = msg.git_branch
                 if msg.timestamp:
+                    if not first_ts:
+                        first_ts = msg.timestamp
                     last_ts = msg.timestamp
                 if msg.version:
                     version = msg.version
@@ -740,6 +747,7 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
         cwd=cwd,
         git_branch=git_branch,
         timestamp=last_ts,
+        start_timestamp=first_ts,
         first_prompt=first_prompt,
         last_user_prompt=last_user_prompt,
         last_action=truncate(last_action, 160),
