@@ -201,9 +201,6 @@ export function ConversationTimeline({ turns, isActive, showAll, onShowAll }: Co
                   </div>
                 )}
                 </div>
-                {!isLast && (
-                  <div className="w-px flex-1 mt-1 border-l border-dashed border-[var(--border)]" />
-                )}
               </div>
               {/* Turn card */}
               <div className="flex-1 min-w-0 pb-2">
