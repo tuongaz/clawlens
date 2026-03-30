@@ -83,34 +83,64 @@ export function TurnTimeline({ turns, isActive, onRequestShowAll }: TurnTimeline
     }
   }, [])
 
-  // Track which TurnCard is currently in view using a stable visibility map
+  // Track which TurnCard is currently in view using a stable visibility map.
+  // Uses a MutationObserver to re-attach when TurnCard DOM elements are added/removed
+  // (e.g. expand key change, show-all toggle).
   useEffect(() => {
-    visibleMapRef.current.clear()
-    const turnElements = turns.map((t) => document.getElementById(`turn-${t.index}`)).filter(Boolean) as HTMLElement[]
-    if (turnElements.length === 0) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          const idx = Number(entry.target.getAttribute('data-turn-index'))
-          if (isNaN(idx)) continue
-          if (entry.isIntersecting) {
-            visibleMapRef.current.set(idx, entry.boundingClientRect)
-          } else {
-            visibleMapRef.current.delete(idx)
-          }
+    const intersectionCb: IntersectionObserverCallback = (entries) => {
+      for (const entry of entries) {
+        const idx = Number(entry.target.getAttribute('data-turn-index'))
+        if (isNaN(idx)) continue
+        if (entry.isIntersecting) {
+          visibleMapRef.current.set(idx, entry.boundingClientRect)
+        } else {
+          visibleMapRef.current.delete(idx)
         }
-        if (visibleMapRef.current.size > 0) {
-          const topmost = [...visibleMapRef.current.entries()]
-            .sort((a, b) => a[1].top - b[1].top)[0][0]
-          setActiveTurnIndex(topmost)
-        }
-      },
-      { rootMargin: '-80px 0px -60% 0px', threshold: 0.1 }
-    )
+      }
+      if (visibleMapRef.current.size > 0) {
+        const topmost = [...visibleMapRef.current.entries()]
+          .sort((a, b) => a[1].top - b[1].top)[0][0]
+        setActiveTurnIndex(topmost)
+      }
+    }
 
-    turnElements.forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
+    let io = new IntersectionObserver(intersectionCb, {
+      rootMargin: '-80px 0px -60% 0px',
+      threshold: 0.1,
+    })
+
+    const observedSet = new Set<Element>()
+
+    const attach = () => {
+      const els = document.querySelectorAll<HTMLElement>('[data-turn-index]')
+      els.forEach((el) => {
+        if (!observedSet.has(el)) {
+          observedSet.add(el)
+          io.observe(el)
+        }
+      })
+    }
+
+    attach()
+
+    // Re-attach when DOM changes (TurnCard re-mounts)
+    const mo = new MutationObserver(() => {
+      // Reset and re-scan
+      io.disconnect()
+      observedSet.clear()
+      visibleMapRef.current.clear()
+      io = new IntersectionObserver(intersectionCb, {
+        rootMargin: '-80px 0px -60% 0px',
+        threshold: 0.1,
+      })
+      attach()
+    })
+    mo.observe(document.body, { childList: true, subtree: true })
+
+    return () => {
+      io.disconnect()
+      mo.disconnect()
+    }
   }, [turns])
 
   // Auto-scroll the timeline strip to keep active circle visible
