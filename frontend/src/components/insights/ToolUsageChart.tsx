@@ -18,7 +18,7 @@ export function ToolUsageChart({ tools }: ToolUsageChartProps) {
 
   return (
     <ChartCard title="Tool Usage (Top 10)">
-      <ResponsiveContainer width="100%" height={Math.max(200, data.length * 32)}>
+      <ResponsiveContainer width="100%" height={Math.max(240, data.length * 38)}>
         <BarChart data={data} layout="vertical" margin={{ top: 0, right: 12, bottom: 0, left: 0 }}>
           <XAxis type="number" tick={{ fill: 'var(--text-secondary)', fontSize: 14 }} axisLine={false} tickLine={false} />
           <YAxis

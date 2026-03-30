@@ -31,7 +31,7 @@ export function ProjectInsightsPage() {
     <div className="w-full min-h-screen">
       <Header />
 
-      <div className="px-8 py-6 max-sm:px-4 max-sm:py-4 max-w-[1400px] mx-auto">
+      <div className="px-8 py-6 max-sm:px-4 max-sm:py-4 max-w-[1600px] mx-auto">
         <div className="mb-6">
           <h1 className="font-mono text-xl font-bold text-[var(--text-bright)]">{displayName}</h1>
           <span className="font-mono text-sm text-[var(--text-secondary)]">{group?.path ?? projectName}</span>
@@ -39,20 +39,20 @@ export function ProjectInsightsPage() {
 
         {sessionId ? (
           <Suspense fallback={
-            <div className="mt-4 space-y-6">
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-4 py-3 flex flex-col gap-2">
+            <div className="mt-6 space-y-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {Array.from({ length: 6 }, (_, i) => (
+                  <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl px-5 py-4 flex flex-col gap-2">
                     <Skeleton className="w-20 h-3 rounded" />
                     <Skeleton className="w-16 h-6 rounded" />
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {Array.from({ length: 4 }, (_, i) => (
-                  <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4 flex flex-col gap-3">
+                  <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-6 flex flex-col gap-3">
                     <Skeleton className="w-32 h-4 rounded" />
-                    <Skeleton className="w-full h-48 rounded" />
+                    <Skeleton className="w-full h-56 rounded" />
                   </div>
                 ))}
               </div>

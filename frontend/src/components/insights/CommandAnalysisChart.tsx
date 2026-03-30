@@ -21,7 +21,7 @@ export function CommandAnalysisChart({ userInteractions }: CommandAnalysisChartP
 
   return (
     <ChartCard title="User Command Analysis">
-      <ResponsiveContainer width="100%" height={280}>
+      <ResponsiveContainer width="100%" height={340}>
         <BarChart data={data} margin={{ top: 0, right: 12, bottom: 0, left: 0 }}>
           <XAxis
             dataKey="tools"

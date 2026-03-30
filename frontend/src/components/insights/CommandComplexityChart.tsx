@@ -38,7 +38,7 @@ export function CommandComplexityChart({ commandDetails }: CommandComplexityChar
 
   return (
     <ChartCard title="Command Complexity Over Time">
-      <ResponsiveContainer width="100%" height={280}>
+      <ResponsiveContainer width="100%" height={340}>
         <LineChart data={data} margin={{ top: 4, right: 12, bottom: 0, left: 0 }}>
           <XAxis
             dataKey="label"

@@ -27,11 +27,11 @@ export function InsightsPanel({ sessionId }: InsightsPanelProps) {
 
   if (loading) {
     return (
-      <div className="mt-4 space-y-6">
+      <div className="mt-6 space-y-8">
         {/* Stat cards skeleton */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {Array.from({ length: 5 }, (_, i) => (
-            <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-4 py-3 flex flex-col gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl px-5 py-4 flex flex-col gap-2">
               <Skeleton className="w-20 h-3 rounded" />
               <Skeleton className="w-16 h-6 rounded" />
               <div className="flex flex-col gap-1 mt-1">
@@ -42,11 +42,11 @@ export function InsightsPanel({ sessionId }: InsightsPanelProps) {
           ))}
         </div>
         {/* Chart grid skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {Array.from({ length: 8 }, (_, i) => (
-            <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4 flex flex-col gap-3">
+            <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-6 flex flex-col gap-3">
               <Skeleton className="w-32 h-4 rounded" />
-              <Skeleton className="w-full h-48 rounded" />
+              <Skeleton className="w-full h-56 rounded" />
             </div>
           ))}
         </div>
@@ -67,10 +67,10 @@ export function InsightsPanel({ sessionId }: InsightsPanelProps) {
   }
 
   return (
-    <div className="mt-4 space-y-6">
+    <div className="mt-6 space-y-8">
       <StatCards insights={insights} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ToolUsageChart tools={insights.tools} />
         <ToolCategoryChart advancedTools={insights.advanced_tools} />
         <HourlyTokenChart hourlyPattern={insights.hourly_pattern} />
@@ -81,7 +81,7 @@ export function InsightsPanel({ sessionId }: InsightsPanelProps) {
         <DailyCostChart dailyStats={insights.daily_stats} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SubAgentSkillChart advancedTools={insights.advanced_tools} />
         <McpUsageChart advancedTools={insights.advanced_tools} />
         <CommandComplexityChart commandDetails={insights.command_details} />

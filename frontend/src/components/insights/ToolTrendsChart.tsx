@@ -59,7 +59,7 @@ export function ToolTrendsChart({ commandDetails }: ToolTrendsChartProps) {
 
   return (
     <ChartCard title="Tool Usage Trends">
-      <ResponsiveContainer width="100%" height={320}>
+      <ResponsiveContainer width="100%" height={380}>
         <LineChart data={data} margin={{ top: 4, right: 12, bottom: 0, left: 0 }}>
           <XAxis
             dataKey="label"

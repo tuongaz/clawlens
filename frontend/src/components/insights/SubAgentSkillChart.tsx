@@ -26,7 +26,7 @@ export function SubAgentSkillChart({ advancedTools }: SubAgentSkillChartProps) {
         {agentData.length > 0 && (
           <div>
             <div className="text-[var(--text-secondary)] text-sm mb-2 font-medium">SubAgent Types</div>
-            <ResponsiveContainer width="100%" height={Math.max(120, agentData.length * 28)}>
+            <ResponsiveContainer width="100%" height={Math.max(140, agentData.length * 36)}>
               <BarChart data={agentData} layout="vertical" margin={{ top: 0, right: 12, bottom: 0, left: 0 }}>
                 <XAxis type="number" tick={{ fill: 'var(--text-secondary)', fontSize: 14 }} axisLine={false} tickLine={false} />
                 <YAxis
@@ -55,7 +55,7 @@ export function SubAgentSkillChart({ advancedTools }: SubAgentSkillChartProps) {
         {skillData.length > 0 && (
           <div>
             <div className="text-[var(--text-secondary)] text-sm mb-2 font-medium">Skills / Commands</div>
-            <ResponsiveContainer width="100%" height={Math.max(120, skillData.length * 28)}>
+            <ResponsiveContainer width="100%" height={Math.max(140, skillData.length * 36)}>
               <BarChart data={skillData} layout="vertical" margin={{ top: 0, right: 12, bottom: 0, left: 0 }}>
                 <XAxis type="number" tick={{ fill: 'var(--text-secondary)', fontSize: 14 }} axisLine={false} tickLine={false} />
                 <YAxis

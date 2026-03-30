@@ -10,13 +10,13 @@ interface StatCardProps {
 
 function StatCard({ label, value, details, info }: StatCardProps) {
   return (
-    <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-4 py-3 relative">
-      <div className="absolute top-1.5 right-1.5">
+    <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl px-5 py-4 relative">
+      <div className="absolute top-2 right-2">
         <InfoTip text={info} />
       </div>
-      <div className="text-[var(--text-secondary)] text-sm mb-1">{label}</div>
+      <div className="text-[var(--text-secondary)] text-sm mb-1.5">{label}</div>
       <div className="text-[var(--text-bright)] font-mono text-xl font-semibold">{value}</div>
-      <div className="mt-1.5 space-y-0.5">
+      <div className="mt-2 space-y-0.5">
         {details.map((d, i) => (
           <div key={i} className="text-[var(--text-secondary)] text-sm font-mono">{d}</div>
         ))}
@@ -69,7 +69,7 @@ export function StatCards({ insights }: StatCardsProps) {
   const totalToolCalls = Object.values(tools.usage_counts).reduce((sum, c) => sum + c, 0)
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
       <StatCard
         label="User Commands"
         value={String(ui.real_user_messages)}
