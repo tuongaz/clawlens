@@ -62,6 +62,7 @@ export function InterruptionRateChart({ commandDetails }: InterruptionRateChartP
             tickLine={false}
           />
           <Tooltip
+            cursor={{ fill: 'rgba(255,255,255,0.06)' }}
             contentStyle={{
               background: 'var(--bg-primary)',
               border: '1px solid var(--border)',

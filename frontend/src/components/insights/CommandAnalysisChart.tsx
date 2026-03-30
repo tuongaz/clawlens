@@ -36,6 +36,7 @@ export function CommandAnalysisChart({ userInteractions }: CommandAnalysisChartP
             tickFormatter={(v: number) => `${v}%`}
           />
           <Tooltip
+            cursor={{ fill: 'rgba(255,255,255,0.06)' }}
             contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 15 }}
             labelStyle={{ color: 'var(--text-bright)' }}
             formatter={(value) => value != null ? `${value}%` : ''}

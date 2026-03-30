@@ -44,6 +44,7 @@ export function HourlyTokenChart({ hourlyPattern }: HourlyTokenChartProps) {
             tickFormatter={fmtTokens}
           />
           <Tooltip
+            cursor={{ fill: 'rgba(255,255,255,0.06)' }}
             contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 15 }}
             labelStyle={{ color: 'var(--text-bright)' }}
             itemStyle={{ color: 'var(--text-secondary)' }}

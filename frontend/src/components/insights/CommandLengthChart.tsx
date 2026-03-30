@@ -50,6 +50,7 @@ export function CommandLengthChart({ commandDetails }: CommandLengthChartProps) 
             tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
           />
           <Tooltip
+            cursor={{ fill: 'rgba(255,255,255,0.06)' }}
             contentStyle={{
               background: 'var(--bg-primary)',
               border: '1px solid var(--border)',

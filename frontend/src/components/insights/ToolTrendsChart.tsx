@@ -74,6 +74,7 @@ export function ToolTrendsChart({ commandDetails }: ToolTrendsChartProps) {
             tickLine={false}
           />
           <Tooltip
+            cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
             contentStyle={{
               background: 'var(--bg-primary)',
               border: '1px solid var(--border)',

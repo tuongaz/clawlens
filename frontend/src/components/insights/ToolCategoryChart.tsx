@@ -40,6 +40,7 @@ export function ToolCategoryChart({ advancedTools }: ToolCategoryChartProps) {
             ))}
           </Pie>
           <Tooltip
+            cursor={false}
             contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 15 }}
             labelStyle={{ color: 'var(--text-bright)' }}
             formatter={(value) => value != null ? fmt(Number(value)) : ''}
