@@ -58,14 +58,21 @@ export function TurnCard({ turn, isFirst, defaultExpanded, showWorking }: TurnCa
           )}
 
           {turn.events.length > 0 && (
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-3">
               {turn.events.map((ev, i) =>
                 ev.kind === 'tool' ? (
-                  <div key={i} className="flex items-center gap-1.5 text-base font-mono truncate">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)] shrink-0" />
-                    <span className="text-[var(--text-primary)] font-bold shrink-0">{ev.toolName}</span>
-                    {ev.toolDetail && (
-                      <span className="text-[var(--text-secondary)] truncate">{ev.toolDetail}</span>
+                  <div key={i} className="flex flex-col">
+                    <div className="flex items-start gap-1.5 text-base font-mono">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)] shrink-0 mt-[0.45em]" />
+                      <span className="text-[var(--text-primary)] font-bold shrink-0">{ev.toolName}</span>
+                      {ev.toolDetail && (
+                        <span className="text-[var(--text-secondary)] break-all">{ev.toolDetail}</span>
+                      )}
+                    </div>
+                    {ev.toolExtra && (
+                      <div className="ml-[calc(0.375rem+0.375rem)] pl-2 border-l border-[var(--border)] text-sm font-mono text-gray-500 break-all">
+                        {ev.toolExtra}
+                      </div>
                     )}
                   </div>
                 ) : (

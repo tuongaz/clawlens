@@ -24,6 +24,7 @@ export interface TurnEvent {
   text: string       // for kind=="text"
   toolName: string   // for kind=="tool"
   toolDetail: string // for kind=="tool"
+  toolExtra: string  // for kind=="tool": extra info (e.g. bash command)
 }
 
 export interface TurnUsage {

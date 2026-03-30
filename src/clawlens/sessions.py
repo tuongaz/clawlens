@@ -294,43 +294,57 @@ def extract_user_text(content: object) -> str:
     return ""
 
 
-def _extract_tool_detail(tool_name: str, tool_input: object) -> str:
-    """Extract a detail string from a tool_use input dict."""
+def _extract_tool_detail(tool_name: str, tool_input: object) -> tuple[str, str]:
+    """Extract a detail string and optional extra from a tool_use input dict.
+
+    Returns (detail, extra).  For Bash tools, *detail* is the description
+    (or command when no description) and *extra* is the command when there is
+    a separate description.
+    """
     if not isinstance(tool_input, dict):
-        return ""
+        return ("", "")
 
     if tool_name in ("Read", "Edit", "Write"):
         fp = tool_input.get("file_path")
         if isinstance(fp, str):
-            return fp
+            return (fp, "")
     elif tool_name == "Bash":
         desc = tool_input.get("description")
-        if isinstance(desc, str) and desc:
-            return desc
         cmd = tool_input.get("command")
+        if isinstance(desc, str) and desc:
+            extra = cmd if isinstance(cmd, str) else ""
+            return (desc, extra)
         if isinstance(cmd, str):
-            return cmd
+            return (cmd, "")
     elif tool_name in ("Grep", "Glob"):
         pat = tool_input.get("pattern")
+        path = tool_input.get("path")
+        extra = path if isinstance(path, str) and path else ""
         if isinstance(pat, str):
-            return pat
+            return (pat, extra)
     elif tool_name == "Skill":
         skill = tool_input.get("skill")
+        args = tool_input.get("args")
+        extra = args if isinstance(args, str) and args else ""
         if isinstance(skill, str):
-            return skill
+            return (skill, extra)
     elif tool_name == "Agent":
         desc = tool_input.get("description")
+        stype = tool_input.get("subagent_type")
+        extra = stype if isinstance(stype, str) and stype else ""
         if isinstance(desc, str):
-            return desc
+            return (desc, extra)
     elif tool_name in ("WebSearch", "WebFetch"):
         q = tool_input.get("query")
         if isinstance(q, str):
-            return q
+            url = tool_input.get("url")
+            extra = url if isinstance(url, str) and url else ""
+            return (q, extra)
         u = tool_input.get("url")
         if isinstance(u, str):
-            return u
+            return (u, "")
 
-    return ""
+    return ("", "")
 
 
 def _is_system_boilerplate(text: str) -> bool:
@@ -377,7 +391,7 @@ def extract_action(content: object) -> str:
         if part_type == "tool_use":
             name = part.get("name")
             if isinstance(name, str):
-                detail = _extract_tool_detail(name, part.get("input"))
+                detail, _extra = _extract_tool_detail(name, part.get("input"))
                 if detail:
                     last_action = name + ": " + detail
                 else:
@@ -687,7 +701,7 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
                                     text_parts = []
                                 name = part.get("name", "")
                                 if isinstance(name, str) and name:
-                                    detail = _extract_tool_detail(
+                                    detail, extra = _extract_tool_detail(
                                         name, part.get("input")
                                     )
                                     current_turn.events.append(
@@ -695,6 +709,7 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
                                             kind="tool",
                                             tool_name=name,
                                             tool_detail=detail,
+                                            tool_extra=extra,
                                         )
                                     )
                                     if name.startswith("mcp__"):

@@ -45,6 +45,7 @@ class TurnEvent(BaseModel):
     text: str = ""  # for kind=="text": the assistant text
     tool_name: str = ""  # for kind=="tool": tool name
     tool_detail: str = ""  # for kind=="tool": tool detail
+    tool_extra: str = ""  # for kind=="tool": extra info (e.g. bash command)
 
 
 class TurnUsage(BaseModel):
