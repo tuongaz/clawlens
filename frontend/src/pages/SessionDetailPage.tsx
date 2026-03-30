@@ -6,7 +6,7 @@ import { useSessionDetail } from '../hooks/useSessionDetail'
 import { StatusIndicator } from '../components/StatusIndicator'
 import { Header } from '../components/Header'
 import { SectionCard, MetadataField, ErrorAlert, EmptyState, ThemedChip } from '../components/ui'
-import { ConversationTimeline, TurnTimeline, StatBox, SkillsSubagentsSection, ToolUsageSection } from '../components/session'
+import { ConversationTimeline, StatBox, SkillsSubagentsSection, ToolUsageSection } from '../components/session'
 import { timeAgo, formatTokens, formatDuration, formatElapsed, contextColor, GitBranchIcon, getClientIcon, ideDeepLink } from '../utils'
 
 export function SessionDetailPage() {
@@ -86,18 +86,11 @@ export function SessionDetailPage() {
         </div>
       </div>
 
-      {/* Turn Timeline - sticky */}
-      {detail.turns.length > 0 && (
-        <div className="sticky top-[48px] z-10">
-          <TurnTimeline turns={detail.turns} isActive={isActive} onRequestShowAll={handleShowAll} />
-        </div>
-      )}
-
-      <div className="px-8 py-6 max-sm:px-4 max-sm:py-4 max-w-[1400px] 2xl:max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
+<div className="px-8 py-6 max-sm:px-4 max-sm:py-4 max-w-[1400px] 2xl:max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
         {/* Left: Conversation */}
         <div className="order-2 lg:order-1 min-w-0">
           {detail.turns.length > 0 ? (
-            <ConversationTimeline turns={detail.turns} isActive={isActive} isWaiting={isWaiting} showAll={showAllTurns} onShowAll={handleShowAll} />
+            <ConversationTimeline turns={detail.turns} isActive={isActive} showAll={showAllTurns} onShowAll={handleShowAll} />
           ) : (
             <EmptyState message="No conversation yet" />
           )}

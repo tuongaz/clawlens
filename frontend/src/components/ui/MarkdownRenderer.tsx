@@ -82,13 +82,13 @@ function FrontmatterBlock({ entries }: { entries: FrontmatterEntry[] }) {
       </div>
       <div className="divide-y divide-[var(--border-light)]">
         {entries.map(({ key, value }) => (
-          <div key={key} className="px-3 py-2 flex gap-3">
-            <span className="shrink-0 font-mono text-sm font-medium text-[var(--accent-cyan)]">
+          <div key={key} className="px-3 py-2">
+            <div className="font-mono text-xs font-medium text-[var(--accent-cyan)] mb-0.5">
               {key}
-            </span>
-            <span className="text-sm text-[var(--text-primary)] break-words min-w-0">
+            </div>
+            <div className="text-sm text-[var(--text-primary)] break-words">
               {value}
-            </span>
+            </div>
           </div>
         ))}
       </div>

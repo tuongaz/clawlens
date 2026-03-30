@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import time
+from datetime import datetime
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -734,6 +735,22 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
         if current_turn is not None:
             turns.append(current_turn)
 
+        # Fill in missing durations from timestamps.
+        for i, turn in enumerate(turns):
+            if turn.duration_ms == 0 and i + 1 < len(turns):
+                t_start = turn.timestamp
+                t_end = turns[i + 1].timestamp
+                if t_start and t_end:
+                    try:
+                        start_dt = datetime.fromisoformat(t_start)
+                        end_dt = datetime.fromisoformat(t_end)
+                        diff = int((end_dt - start_dt).total_seconds() * 1000)
+                        if diff > 0:
+                            turn.duration_ms = diff
+                            total_duration += diff
+                    except (ValueError, TypeError):
+                        pass
+
     except OSError:
         logger.warning("Failed to read session file: %s", fpath)
         return None
@@ -1045,12 +1062,19 @@ def load_grouped_sessions(limit: int = 0) -> list[ProjectGroup]:
             )
         )
 
-    # Sort projects by most recent session timestamp descending.
-    # Use max timestamp across all sessions (including active ones) so that
-    # projects with the most recently updated sessions always appear first.
-    groups.sort(
-        key=lambda g: max((s.timestamp for s in g.sessions), default=""),
-        reverse=True,
-    )
+    # Sort projects: active projects (with running sessions) pinned at the top
+    # in stable order (by name) so they don't shift on every update, then
+    # inactive projects by most recent session timestamp descending.
+    def _group_sort_key(g: ProjectGroup) -> tuple[int, str]:
+        has_active = any(s.is_active for s in g.sessions)
+        if has_active:
+            # Active projects first (0), stable alphabetical order by name.
+            return (0, g.project_name)
+        # Inactive projects second (1), newest timestamp first.
+        # Invert timestamp string for descending order within the group.
+        newest = max((s.timestamp for s in g.sessions), default="")
+        return (1, _invert_timestamp(newest))
+
+    groups.sort(key=_group_sort_key)
 
     return groups

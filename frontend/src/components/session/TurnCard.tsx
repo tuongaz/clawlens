@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { ChevronUp, ChevronDown } from 'lucide-react'
 import type { Turn } from '../../types'
-import { formatDuration } from '../../utils'
 import { TaskNotificationContent } from './TaskNotificationContent'
 
 interface TurnCardProps {
   turn: Turn
   isFirst?: boolean
   defaultExpanded?: boolean
+  showWorking?: boolean
 }
 
 function getPreviewText(turn: Turn): string {
@@ -28,44 +28,29 @@ function getPreviewText(turn: Turn): string {
   return hasMore ? preview + ' …' : preview
 }
 
-export function TurnCard({ turn, isFirst, defaultExpanded }: TurnCardProps) {
+export function TurnCard({ turn, isFirst, defaultExpanded, showWorking }: TurnCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded ?? true)
-  const ts = turn.timestamp ? new Date(turn.timestamp) : null
-  const timeStr = ts && !isNaN(ts.getTime())
-    ? ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-    : ''
 
   return (
-    <div id={`turn-${turn.index}`} data-turn-index={turn.index} className={`border rounded-lg px-4 py-3 scroll-mt-[100px] ${isFirst ? 'bg-[rgba(88,166,255,0.08)] border-[rgba(88,166,255,0.3)]' : 'bg-[var(--bg-secondary)] border-[var(--border)]'}`}>
-      <div
-        className="flex items-center gap-2 flex-wrap cursor-pointer select-none"
+    <div id={`turn-${turn.index}`} data-turn-index={turn.index} className={`relative border rounded-lg px-4 py-3 scroll-mt-[100px] ${isFirst ? 'bg-[rgba(88,166,255,0.08)] border-[rgba(88,166,255,0.3)]' : 'bg-[var(--bg-secondary)] border-[var(--border)]'}`}>
+      <button
+        className="absolute top-2 right-2 p-1 text-[var(--text-secondary)] hover:text-[var(--accent-cyan)] transition-colors cursor-pointer z-10"
         onClick={() => setExpanded(!expanded)}
       >
-        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-sm font-mono font-semibold shrink-0 ${isFirst ? 'bg-[rgba(88,166,255,0.25)] text-[var(--accent-cyan)]' : 'bg-[rgba(88,166,255,0.15)] text-[var(--accent-cyan)]'}`}>
-          {turn.index}
-        </span>
-        {timeStr && (
-          <span className="text-[var(--text-secondary)] text-base font-mono">{timeStr}</span>
-        )}
-        {turn.durationMs > 0 && (
-          <span className="text-[var(--text-secondary)] text-sm font-mono">
-            {formatDuration(turn.durationMs)}
-          </span>
-        )}
         {expanded
-          ? <ChevronUp size={14} className="text-[var(--text-secondary)] ml-auto shrink-0" />
-          : <ChevronDown size={14} className="text-[var(--text-secondary)] ml-auto shrink-0" />
+          ? <ChevronUp size={14} />
+          : <ChevronDown size={14} />
         }
-      </div>
+      </button>
 
       {!expanded && (
-        <div className="mt-2 text-base text-[var(--text-primary)] font-mono whitespace-pre-line line-clamp-2">
+        <div className="text-base text-[var(--text-primary)] font-mono whitespace-pre-line line-clamp-2 pr-6">
           {getPreviewText(turn)}
         </div>
       )}
 
       {expanded && (
-        <div className="mt-2">
+        <div>
           {turn.userPrompt && (
             <div className="text-base text-[var(--text-primary)] mb-2 break-words">
               <TaskNotificationContent text={turn.userPrompt} />
@@ -90,6 +75,17 @@ export function TurnCard({ turn, isFirst, defaultExpanded }: TurnCardProps) {
                   </div>
                 )
               )}
+            </div>
+          )}
+
+          {showWorking && (
+            <div className="mt-3 flex items-center gap-2 text-[var(--text-secondary)]">
+              <div className="flex items-center gap-1">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]" style={{ animation: 'dot-blink 1.4s ease-in-out infinite' }} />
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]" style={{ animation: 'dot-blink 1.4s ease-in-out 0.2s infinite' }} />
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]" style={{ animation: 'dot-blink 1.4s ease-in-out 0.4s infinite' }} />
+              </div>
+              <span className="text-base">Claude is working…</span>
             </div>
           )}
         </div>
