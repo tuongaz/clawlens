@@ -25,14 +25,21 @@ const components: Components = {
       const match = className.match(/language-(\w+)/)
       const lang = match?.[1]
 
+      const code = String(child.props?.children ?? '').trim()
+
       if (lang && DIAGRAM_LANGUAGES.has(lang)) {
-        const code = String(child.props?.children ?? '').trim()
         if (lang === 'mermaid') {
           return <MermaidDiagram code={code} />
         }
         if (lang === 'diagraph' || lang === 'digraph') {
           return <DiagraphDiagram code={code} />
         }
+      }
+
+      // Auto-detect: code block without a language tag whose content
+      // looks like a Graphviz digraph definition.
+      if (!lang && /^\s*di(?:a?graph)\s+\w+\s*\{/i.test(code)) {
+        return <DiagraphDiagram code={code} />
       }
     }
     return <pre {...props}>{children}</pre>
@@ -89,6 +96,55 @@ function FrontmatterBlock({ entries }: { entries: FrontmatterEntry[] }) {
   )
 }
 
+/**
+ * Detect raw digraph/diagraph blocks that aren't inside code fences and wrap
+ * them so react-markdown can pick them up as ```digraph code blocks.
+ *
+ * Matches patterns like:
+ *   digraph name {
+ *     ...
+ *   }
+ */
+function wrapRawDigraphs(text: string): string {
+  // If the text already has the digraph inside a code fence, skip it.
+  if (/```\s*(?:digraph|diagraph)\b/i.test(text)) return text
+
+  // Try to find a raw digraph block and wrap it in a code fence.
+  // We need to match the opening "digraph name {" and find its closing "}".
+  const match = text.match(/(?:^|\n)([ \t]*)(di(?:a?graph)\s+\w+\s*\{)/i)
+  if (!match || match.index === undefined) return text
+
+  const startIdx = match.index + (text[match.index] === '\n' ? 1 : 0)
+  const indent = match[1]
+
+  // Find the matching closing brace by counting braces
+  let depth = 0
+  let endIdx = startIdx
+  for (let i = startIdx; i < text.length; i++) {
+    if (text[i] === '{') depth++
+    else if (text[i] === '}') {
+      depth--
+      if (depth === 0) {
+        endIdx = i + 1
+        break
+      }
+    }
+  }
+
+  if (depth !== 0) return text // unbalanced braces, skip
+
+  const before = text.slice(0, startIdx)
+  const digraphBlock = text.slice(startIdx, endIdx)
+  const after = text.slice(endIdx)
+
+  // Remove common leading indent from the block
+  const stripped = indent
+    ? digraphBlock.split('\n').map(l => l.startsWith(indent) ? l.slice(indent.length) : l).join('\n')
+    : digraphBlock
+
+  return `${before}\n\`\`\`digraph\n${stripped}\n\`\`\`\n${after}`
+}
+
 interface MarkdownRendererProps {
   children: string
   className?: string
@@ -96,12 +152,13 @@ interface MarkdownRendererProps {
 
 export function MarkdownRenderer({ children, className }: MarkdownRendererProps) {
   const { frontmatter, body } = useMemo(() => parseFrontmatter(children), [children])
+  const processed = wrapRawDigraphs(body)
 
   return (
     <div className={className}>
       {frontmatter.length > 0 && <FrontmatterBlock entries={frontmatter} />}
       <Markdown remarkPlugins={[remarkGfm, remarkBreaks]} components={components}>
-        {body}
+        {processed}
       </Markdown>
     </div>
   )
