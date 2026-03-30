@@ -6,6 +6,7 @@ import { ProjectInsightsPage } from './pages/ProjectInsightsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { MemoryPanel } from './components/MemorySidebar'
 import { SkillPanel } from './components/SkillSidebar'
+import { SubagentPanel } from './components/SubagentSidebar'
 import './App.css'
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
           <Route path="/session/:sessionId" element={<SessionDetailPage />}>
             <Route path="memory" element={<MemoryPanel />} />
             <Route path="skills/:skillName" element={<SkillPanel />} />
+            <Route path="subagents/:subagentName" element={<SubagentPanel />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

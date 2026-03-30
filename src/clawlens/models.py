@@ -69,6 +69,18 @@ class Turn(BaseModel):
     stop_reason: str = ""
 
 
+class SubagentInvocation(BaseModel):
+    """A single invocation of a subagent."""
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    description: str = ""
+    prompt: str = ""
+    model: str = ""
+    mode: str = ""
+    run_in_background: bool = False
+
+
 class SessionDetail(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
@@ -98,6 +110,7 @@ class SessionDetail(BaseModel):
     skills_used: list[str] = []
     subagents_used: list[str] = []
     commands_used: list[str] = []
+    subagent_details: dict[str, list[SubagentInvocation]] = {}
     total_input_tokens: int = 0
     total_output_tokens: int = 0
     total_cache_creation_tokens: int = 0

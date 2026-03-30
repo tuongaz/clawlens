@@ -44,11 +44,20 @@ export interface Turn {
   stopReason: string
 }
 
+export interface SubagentInvocation {
+  description: string
+  prompt: string
+  model: string
+  mode: string
+  runInBackground: boolean
+}
+
 export interface SessionDetail extends Session {
   toolUsage: Record<string, number>
   mcpToolUsage: Record<string, number>
   skillsUsed: string[]
   subagentsUsed: string[]
+  subagentDetails: Record<string, SubagentInvocation[]>
   commandsUsed: string[]
   totalInputTokens: number
   totalOutputTokens: number

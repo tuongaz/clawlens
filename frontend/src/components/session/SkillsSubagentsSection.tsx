@@ -47,10 +47,12 @@ export function SkillsSubagentsSection({ sessionId, commandsUsed, skillsUsed, su
       )}
       {hasSubagents && (
         <div>
-          <SectionTitle className="mb-2">Subagents <InfoTip text="Autonomous sub-agents spawned to handle parallel or specialized tasks." /></SectionTitle>
+          <SectionTitle className="mb-2">Subagents <InfoTip text="Autonomous sub-agents spawned to handle parallel or specialized tasks. Click to view invocation details." /></SectionTitle>
           <div className="flex flex-wrap gap-1.5">
             {subagentsUsed.map((s) => (
-              <ThemedChip key={s} color="green">{s}</ThemedChip>
+              <Link key={s} to={`/session/${sessionId}/subagents/${encodeURIComponent(s)}`}>
+                <ThemedChip color="green" interactive>{s}</ThemedChip>
+              </Link>
             ))}
           </div>
         </div>

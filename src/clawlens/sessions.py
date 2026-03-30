@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from clawlens.ide import load_ide_pid_map, resolve_client_for_pid
-from clawlens.models import MemoryFile, Message, ProjectGroup, Session, SessionDetail, Turn, TurnEvent
+from clawlens.models import MemoryFile, Message, ProjectGroup, Session, SessionDetail, SubagentInvocation, Turn, TurnEvent
 
 logger = logging.getLogger(__name__)
 
@@ -534,6 +534,7 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
     mcp_tool_usage: dict[str, int] = {}
     skills_used: set[str] = set()
     subagents_used: set[str] = set()
+    subagent_details: dict[str, list[SubagentInvocation]] = {}
     commands_used: set[str] = set()
     total_input = 0
     total_output = 0
@@ -721,6 +722,18 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
                                                 )
                                             if isinstance(label, str) and label:
                                                 subagents_used.add(label)
+                                                inv = SubagentInvocation(
+                                                    description=tool_input.get("description", ""),
+                                                    prompt=_truncate_keep_newlines(
+                                                        tool_input.get("prompt", ""), 2000
+                                                    ),
+                                                    model=tool_input.get("model", ""),
+                                                    mode=tool_input.get("mode", ""),
+                                                    run_in_background=bool(
+                                                        tool_input.get("run_in_background", False)
+                                                    ),
+                                                )
+                                                subagent_details.setdefault(label, []).append(inv)
                         # Flush any remaining text after the last tool.
                         if text_parts:
                             combined = "\n\n".join(text_parts)
@@ -777,6 +790,7 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
         mcp_tool_usage=mcp_tool_usage,
         skills_used=sorted(skills_used),
         subagents_used=sorted(subagents_used),
+        subagent_details=subagent_details,
         commands_used=sorted(commands_used),
         total_input_tokens=total_input,
         total_output_tokens=total_output,
@@ -1063,18 +1077,17 @@ def load_grouped_sessions(limit: int = 0) -> list[ProjectGroup]:
         )
 
     # Sort projects: active projects (with running sessions) pinned at the top
-    # in stable order (by name) so they don't shift on every update, then
+    # in stable alphabetical order so they don't shift on every update, then
     # inactive projects by most recent session timestamp descending.
-    def _group_sort_key(g: ProjectGroup) -> tuple[int, str]:
-        has_active = any(s.is_active for s in g.sessions)
-        if has_active:
-            # Active projects first (0), stable alphabetical order by name.
-            return (0, g.project_name)
-        # Inactive projects second (1), newest timestamp first.
-        # Invert timestamp string for descending order within the group.
-        newest = max((s.timestamp for s in g.sessions), default="")
-        return (1, _invert_timestamp(newest))
-
-    groups.sort(key=_group_sort_key)
+    active_groups = sorted(
+        (g for g in groups if any(s.is_active for s in g.sessions)),
+        key=lambda g: g.project_name,
+    )
+    inactive_groups = sorted(
+        (g for g in groups if not any(s.is_active for s in g.sessions)),
+        key=lambda g: max((s.timestamp for s in g.sessions), default=""),
+        reverse=True,
+    )
+    groups = active_groups + inactive_groups
 
     return groups
