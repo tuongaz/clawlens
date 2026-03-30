@@ -36,7 +36,7 @@ export function TurnCard({ turn, isFirst, defaultExpanded }: TurnCardProps) {
     : ''
 
   return (
-    <div className={`border rounded-lg px-4 py-3 ${isFirst ? 'bg-[rgba(88,166,255,0.08)] border-[rgba(88,166,255,0.3)]' : 'bg-[var(--bg-secondary)] border-[var(--border)]'}`}>
+    <div id={`turn-${turn.index}`} data-turn-index={turn.index} className={`border rounded-lg px-4 py-3 scroll-mt-[100px] ${isFirst ? 'bg-[rgba(88,166,255,0.08)] border-[rgba(88,166,255,0.3)]' : 'bg-[var(--bg-secondary)] border-[var(--border)]'}`}>
       <div
         className="flex items-center gap-2 flex-wrap cursor-pointer select-none"
         onClick={() => setExpanded(!expanded)}

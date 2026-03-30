@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import type { Turn } from '../../types'
 import { LiveBadge, TypingDots } from '../StatusIndicator'
 import { SectionTitle } from '../ui'
@@ -10,10 +10,11 @@ interface ConversationTimelineProps {
   turns: Turn[]
   isActive: boolean
   isWaiting: boolean
+  showAll: boolean
+  onShowAll: () => void
 }
 
-export function ConversationTimeline({ turns, isActive, isWaiting }: ConversationTimelineProps) {
-  const [showAll, setShowAll] = useState(false)
+export function ConversationTimeline({ turns, isActive, isWaiting, showAll, onShowAll }: ConversationTimelineProps) {
   const visibleTurns = showAll ? turns : turns.slice(0, INITIAL_TURNS_SHOWN)
   const hasMore = turns.length > INITIAL_TURNS_SHOWN
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -39,7 +40,7 @@ export function ConversationTimeline({ turns, isActive, isWaiting }: Conversatio
       </div>
       {hasMore && !showAll && (
         <button
-          onClick={() => setShowAll(true)}
+          onClick={onShowAll}
           className="mt-3 w-full py-2 text-base text-[var(--accent-cyan)] bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg hover:bg-[rgba(88,166,255,0.1)] transition-colors cursor-pointer"
         >
           Show all {turns.length} turns ({turns.length - INITIAL_TURNS_SHOWN} more)

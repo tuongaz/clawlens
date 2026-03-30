@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react'
 import { useParams, Outlet, Link } from 'react-router-dom'
 import { Brain } from 'lucide-react'
 import { Chip, Meter, Spinner } from '@heroui/react'
@@ -5,12 +6,14 @@ import { useSessionDetail } from '../hooks/useSessionDetail'
 import { StatusIndicator } from '../components/StatusIndicator'
 import { Header } from '../components/Header'
 import { SectionCard, MetadataField, ErrorAlert, EmptyState, ThemedChip } from '../components/ui'
-import { ConversationTimeline, StatBox, SkillsSubagentsSection, ToolUsageSection } from '../components/session'
+import { ConversationTimeline, TurnTimeline, StatBox, SkillsSubagentsSection, ToolUsageSection } from '../components/session'
 import { timeAgo, formatTokens, formatDuration, contextColor, GitBranchIcon, getClientIcon, ideDeepLink } from '../utils'
 
 export function SessionDetailPage() {
   const { sessionId } = useParams<{ sessionId: string }>()
   const { detail, loading, error } = useSessionDetail(sessionId ?? '')
+  const [showAllTurns, setShowAllTurns] = useState(false)
+  const handleShowAll = useCallback(() => setShowAllTurns(true), [])
 
   if (loading) {
     return (
@@ -80,11 +83,18 @@ export function SessionDetailPage() {
         </div>
       </div>
 
+      {/* Turn Timeline - sticky */}
+      {detail.turns.length > 0 && (
+        <div className="sticky top-[48px] z-10">
+          <TurnTimeline turns={detail.turns} isActive={isActive} onRequestShowAll={handleShowAll} />
+        </div>
+      )}
+
       <div className="px-8 py-6 max-sm:px-4 max-sm:py-4 max-w-[1400px] 2xl:max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
         {/* Left: Conversation */}
         <div className="order-2 lg:order-1 min-w-0">
           {detail.turns.length > 0 ? (
-            <ConversationTimeline turns={detail.turns} isActive={isActive} isWaiting={isWaiting} />
+            <ConversationTimeline turns={detail.turns} isActive={isActive} isWaiting={isWaiting} showAll={showAllTurns} onShowAll={handleShowAll} />
           ) : (
             <EmptyState message="No conversation yet" />
           )}
@@ -132,7 +142,7 @@ export function SessionDetailPage() {
               <MetadataField label="Memory" info="Whether Claude's persistent memory system is enabled for this project.">
                 <Link to={`/session/${detail.sessionId}/memory`}>
                   <ThemedChip color="magenta" interactive className="text-sm">
-                    <Brain size={14} /> Memory Enabled
+                    <Brain size={14} /> Memory
                   </ThemedChip>
                 </Link>
               </MetadataField>
