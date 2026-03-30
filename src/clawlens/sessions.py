@@ -724,9 +724,7 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
                                                 subagents_used.add(label)
                                                 inv = SubagentInvocation(
                                                     description=tool_input.get("description", ""),
-                                                    prompt=_truncate_keep_newlines(
-                                                        tool_input.get("prompt", ""), 2000
-                                                    ),
+                                                    prompt=tool_input.get("prompt", ""),
                                                     model=tool_input.get("model", ""),
                                                     mode=tool_input.get("mode", ""),
                                                     run_in_background=bool(
