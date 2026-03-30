@@ -43,7 +43,7 @@ _MODEL_CONTEXT_LIMITS: dict[str, int] = {
     "claude-haiku-4-5-20251001": 200_000,
 }
 
-_DEFAULT_CONTEXT_LIMIT = 200_000
+_DEFAULT_CONTEXT_LIMIT = 1_000_000
 
 
 def get_model_context_limit(model: str) -> int:

@@ -26,7 +26,7 @@ def test_known_model_context_limit() -> None:
 
 
 def test_unknown_model_falls_back_to_default() -> None:
-    assert get_model_context_limit("unknown-model-xyz") == 200_000
+    assert get_model_context_limit("unknown-model-xyz") == 1_000_000
 
 
 # ---------------------------------------------------------------------------
