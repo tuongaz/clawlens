@@ -107,7 +107,6 @@ export function ConversationTimeline({ turns, isActive, showAll, onShowAll }: Co
       <div className="flex items-center justify-between">
         <SectionTitle className="gap-2">
           Conversation Timeline ({turns.length} turn{turns.length !== 1 ? 's' : ''})
-          {isActive && <LiveBadge />}
         </SectionTitle>
         <button
           onClick={toggleAll}
