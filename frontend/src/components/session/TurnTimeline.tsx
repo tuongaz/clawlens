@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import type { Turn } from '../../types'
 
 interface TurnTimelineProps {
@@ -33,6 +34,7 @@ export function TurnTimeline({ turns, isActive, onRequestShowAll }: TurnTimeline
   const isDraggingRef = useRef(false)
   const dragStartXRef = useRef(0)
   const dragScrollLeftRef = useRef(0)
+  const [hoverTurn, setHoverTurn] = useState<{ turn: Turn; rect: DOMRect; turnMs: number } | null>(null)
 
   const firstTimestamp = turns.length > 0 ? new Date(turns[0].timestamp).getTime() : 0
 
@@ -149,60 +151,39 @@ export function TurnTimeline({ turns, isActive, onRequestShowAll }: TurnTimeline
           const isCurrent = activeTurnIndex === turn.index
           const showPulse = isActive && isLast
 
-          const startTime = formatTime(turn.timestamp)
-          const endMs = new Date(turn.timestamp).getTime() + turn.durationMs
-          const endTime = turn.durationMs > 0 ? formatTime(new Date(endMs).toISOString()) : '—'
-
           return (
             <div key={turn.index} className="flex items-center shrink-0">
-              <div className="relative group/tip">
-                <button
-                  data-timeline-index={turn.index}
-                  onClick={() => handleClick(turn.index)}
-                  className={`flex flex-col items-center gap-1 px-2 py-1 rounded-lg transition-colors cursor-pointer group
-                    ${isCurrent ? 'bg-[rgba(88,166,255,0.12)]' : 'hover:bg-[rgba(88,166,255,0.06)]'}`}
-                >
-                  <div className="relative">
-                    <div
-                      className={`w-7 h-7 rounded-full transition-all flex items-center justify-center text-[11px] font-mono font-semibold
-                        ${isCurrent
-                          ? 'bg-[var(--accent-cyan)] text-[var(--bg-primary)] scale-110'
-                          : 'bg-[rgba(88,166,255,0.15)] text-[var(--text-secondary)] group-hover:bg-[rgba(88,166,255,0.25)]'
-                        }
-                        ${showPulse ? 'animate-pulse' : ''}`}
-                    >
-                      {turn.index}
-                    </div>
-                    {showPulse && (
-                      <div className="absolute inset-0 w-7 h-7 rounded-full bg-[var(--accent-cyan)] animate-ping opacity-30" />
-                    )}
+              <button
+                data-timeline-index={turn.index}
+                onClick={() => handleClick(turn.index)}
+                onMouseEnter={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  setHoverTurn({ turn, rect, turnMs })
+                }}
+                onMouseLeave={() => setHoverTurn(null)}
+                className={`flex flex-col items-center gap-1 px-2 py-1 rounded-lg transition-colors cursor-pointer group
+                  ${isCurrent ? 'bg-[rgba(88,166,255,0.12)]' : 'hover:bg-[rgba(88,166,255,0.06)]'}`}
+              >
+                <div className="relative">
+                  <div
+                    className={`w-7 h-7 rounded-full transition-all flex items-center justify-center text-[11px] font-mono font-semibold
+                      ${isCurrent
+                        ? 'bg-[var(--accent-cyan)] text-[var(--bg-primary)] scale-110'
+                        : 'bg-[rgba(88,166,255,0.15)] text-[var(--text-secondary)] group-hover:bg-[rgba(88,166,255,0.25)]'
+                      }
+                      ${showPulse ? 'animate-pulse' : ''}`}
+                  >
+                    {turn.index}
                   </div>
-                  <span className={`text-[11px] font-mono leading-none whitespace-nowrap
-                    ${isCurrent ? 'text-[var(--accent-cyan)]' : 'text-[var(--text-secondary)] opacity-60'}`}>
-                    {formatRelativeTime(turnMs)}
-                  </span>
-                </button>
-
-                {/* Hover popover */}
-                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover/tip:block z-50 pointer-events-none">
-                  <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg px-3 py-2 shadow-lg whitespace-nowrap text-[12px] font-mono">
-                    <div className="text-[var(--text-bright)] font-semibold mb-1">Turn {turn.index}</div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-[var(--text-secondary)]">Start</span>
-                      <span className="text-[var(--text-primary)]">{startTime}</span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-[var(--text-secondary)]">End</span>
-                      <span className="text-[var(--text-primary)]">{endTime}</span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-[var(--text-secondary)]">From start</span>
-                      <span className="text-[var(--accent-cyan)]">{formatRelativeTime(turnMs)}</span>
-                    </div>
-                  </div>
-                  <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-[var(--bg-primary)] border-r border-b border-[var(--border)] rotate-45" />
+                  {showPulse && (
+                    <div className="absolute inset-0 w-7 h-7 rounded-full bg-[var(--accent-cyan)] animate-ping opacity-30" />
+                  )}
                 </div>
-              </div>
+                <span className={`text-[11px] font-mono leading-none whitespace-nowrap
+                  ${isCurrent ? 'text-[var(--accent-cyan)]' : 'text-[var(--text-secondary)] opacity-60'}`}>
+                  {formatRelativeTime(turnMs)}
+                </span>
+              </button>
 
               {!isLast && (
                 <div className="w-4 h-px bg-[var(--border)] shrink-0" />
@@ -211,6 +192,40 @@ export function TurnTimeline({ turns, isActive, onRequestShowAll }: TurnTimeline
           )
         })}
       </div>
+
+      {/* Portal popover — rendered outside overflow container */}
+      {hoverTurn && createPortal(
+        <div
+          className="fixed z-50 pointer-events-none"
+          style={{
+            left: hoverTurn.rect.left + hoverTurn.rect.width / 2,
+            top: hoverTurn.rect.top - 8,
+            transform: 'translate(-50%, -100%)',
+          }}
+        >
+          <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg px-3 py-2 shadow-lg whitespace-nowrap text-[12px] font-mono">
+            <div className="text-[var(--text-bright)] font-semibold mb-1">Turn {hoverTurn.turn.index}</div>
+            <div className="flex justify-between gap-4">
+              <span className="text-[var(--text-secondary)]">Start</span>
+              <span className="text-[var(--text-primary)]">{formatTime(hoverTurn.turn.timestamp)}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-[var(--text-secondary)]">End</span>
+              <span className="text-[var(--text-primary)]">
+                {hoverTurn.turn.durationMs > 0
+                  ? formatTime(new Date(new Date(hoverTurn.turn.timestamp).getTime() + hoverTurn.turn.durationMs).toISOString())
+                  : '—'}
+              </span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-[var(--text-secondary)]">From start</span>
+              <span className="text-[var(--accent-cyan)]">{formatRelativeTime(hoverTurn.turnMs)}</span>
+            </div>
+          </div>
+          <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-[var(--bg-primary)] border-r border-b border-[var(--border)] rotate-45" />
+        </div>,
+        document.body
+      )}
     </div>
   )
 }
