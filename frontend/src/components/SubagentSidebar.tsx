@@ -44,7 +44,7 @@ function InvocationCard({ inv, index, total }: { inv: SubagentInvocation; index:
           {inv.prompt && (
             <div className="pt-1">
               <div className="text-xs text-[var(--text-secondary)] mb-1">Prompt</div>
-              <pre className="text-sm text-[var(--text-primary)] whitespace-pre-wrap break-words bg-white/5 rounded-md p-2.5 max-h-[300px] overflow-y-auto font-mono leading-relaxed">
+              <pre className="text-sm text-[var(--text-primary)] whitespace-pre-wrap break-words bg-white/5 rounded-md p-2.5 font-mono leading-relaxed">
                 {inv.prompt}
               </pre>
             </div>

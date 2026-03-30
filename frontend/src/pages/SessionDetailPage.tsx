@@ -86,79 +86,89 @@ export function SessionDetailPage() {
         </div>
       </div>
 
-<div className="px-8 py-6 max-sm:px-4 max-sm:py-4 mx-auto space-y-6">
-        {/* Session Details */}
-        <div className="space-y-4">
+<div className="px-8 py-6 max-sm:px-4 max-sm:py-4 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
+        {/* Left: Conversation */}
+        <div className="order-2 lg:order-1 min-w-0">
+          {detail.turns.length > 0 ? (
+            <ConversationTimeline turns={detail.turns} isActive={isActive} showAll={showAllTurns} onShowAll={handleShowAll} />
+          ) : (
+            <EmptyState message="No conversation yet" />
+          )}
+        </div>
+
+        {/* Right: Session Details */}
+        <div className="order-1 lg:order-2 lg:sticky lg:top-[60px] lg:self-start lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto space-y-4">
           <SectionCard className="space-y-3">
-            <div className="flex flex-wrap gap-x-8 gap-y-3">
-              {detail.cwd && (
-                <MetadataField label="Working Directory" info="The filesystem path where this Claude Code session is running.">
-                  <span className="font-mono text-base text-[var(--text-primary)] break-all">{detail.cwd}</span>
-                </MetadataField>
-              )}
+            {detail.cwd && (
+              <MetadataField label="Working Directory" info="The filesystem path where this Claude Code session is running.">
+                <span className="font-mono text-base text-[var(--text-primary)] break-all">{detail.cwd}</span>
+              </MetadataField>
+            )}
 
-              {detail.gitBranch && (
-                <MetadataField label="Branch" info="The active git branch in the working directory.">
-                  <span className="inline-flex items-center gap-1.5 font-mono text-base text-[var(--text-primary)]">
-                    <GitBranchIcon /> {detail.gitBranch}
-                  </span>
-                </MetadataField>
-              )}
+            {(detail.gitBranch || detail.client) && (
+              <div className="flex items-center justify-between gap-3">
+                {detail.gitBranch && (
+                  <MetadataField label="Branch" info="The active git branch in the working directory.">
+                    <span className="inline-flex items-center gap-1.5 font-mono text-base text-[var(--text-primary)]">
+                      <GitBranchIcon /> {detail.gitBranch}
+                    </span>
+                  </MetadataField>
+                )}
+                {detail.client && (
+                  <MetadataField label="Client" info="The IDE or terminal client connected to this session.">
+                    <span className="inline-flex items-center gap-1.5 text-base text-[var(--text-primary)]">
+                      {getClientIcon(detail.client)}
+                      {(() => {
+                        const link = ideDeepLink(detail.client, detail.cwd)
+                        return link ? (
+                          <a href={link} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-cyan)] hover:underline">
+                            {detail.client}
+                          </a>
+                        ) : (
+                          detail.client
+                        )
+                      })()}
+                    </span>
+                  </MetadataField>
+                )}
+              </div>
+            )}
 
-              {detail.client && (
-                <MetadataField label="Client" info="The IDE or terminal client connected to this session.">
-                  <span className="inline-flex items-center gap-1.5 text-base text-[var(--text-primary)]">
-                    {getClientIcon(detail.client)}
-                    {(() => {
-                      const link = ideDeepLink(detail.client, detail.cwd)
-                      return link ? (
-                        <a href={link} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-cyan)] hover:underline">
-                          {detail.client}
-                        </a>
-                      ) : (
-                        detail.client
-                      )
-                    })()}
-                  </span>
-                </MetadataField>
-              )}
+            {detail.usesMemory && (
+              <MetadataField label="Memory" info="Whether Claude's persistent memory system is enabled for this project.">
+                <Link to={`/session/${detail.sessionId}/memory`}>
+                  <ThemedChip color="magenta" interactive className="text-sm">
+                    <Brain size={14} /> Memory
+                  </ThemedChip>
+                </Link>
+              </MetadataField>
+            )}
 
-              {detail.usesMemory && (
-                <MetadataField label="Memory" info="Whether Claude's persistent memory system is enabled for this project.">
-                  <Link to={`/session/${detail.sessionId}/memory`}>
-                    <ThemedChip color="magenta" interactive className="text-sm">
-                      <Brain size={14} /> Memory
-                    </ThemedChip>
-                  </Link>
-                </MetadataField>
-              )}
-
-              {detail.contextTokens > 0 && (
-                <MetadataField label="Context Usage" info="How much of the model's context window has been consumed. High usage may trigger compaction.">
-                  <Meter
-                    value={pct}
-                    minValue={0}
-                    maxValue={100}
-                    color={contextColor(detail.contextTokens, detail.maxContextTokens)}
-                  >
-                    <div className="flex justify-between items-center mb-0.5">
-                      <span className="text-base font-mono text-[var(--text-secondary)]">
-                        {formatTokens(detail.contextTokens)} / {formatTokens(detail.maxContextTokens)}
-                      </span>
-                      {detail.maxContextTokens > 0 && (
-                        <Meter.Output className="text-base font-mono text-[var(--text-secondary)] opacity-70" />
-                      )}
-                    </div>
-                    <Meter.Track className="h-1.5 bg-white/10 rounded-full">
-                      <Meter.Fill className="rounded-full" />
-                    </Meter.Track>
-                  </Meter>
-                </MetadataField>
-              )}
-            </div>
+            {detail.contextTokens > 0 && (
+              <MetadataField label="Context Usage" info="How much of the model's context window has been consumed. High usage may trigger compaction.">
+                <Meter
+                  value={pct}
+                  minValue={0}
+                  maxValue={100}
+                  color={contextColor(detail.contextTokens, detail.maxContextTokens)}
+                >
+                  <div className="flex justify-between items-center mb-0.5">
+                    <span className="text-base font-mono text-[var(--text-secondary)]">
+                      {formatTokens(detail.contextTokens)} / {formatTokens(detail.maxContextTokens)}
+                    </span>
+                    {detail.maxContextTokens > 0 && (
+                      <Meter.Output className="text-base font-mono text-[var(--text-secondary)] opacity-70" />
+                    )}
+                  </div>
+                  <Meter.Track className="h-1.5 bg-white/10 rounded-full">
+                    <Meter.Fill className="rounded-full" />
+                  </Meter.Track>
+                </Meter>
+              </MetadataField>
+            )}
           </SectionCard>
 
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <StatBox label="Input Tokens" value={formatTokens(detail.totalInputTokens)} info="Total tokens sent to the model, including system prompts and conversation history." />
             <StatBox label="Output Tokens" value={formatTokens(detail.totalOutputTokens)} info="Total tokens generated by the model in responses." />
             <StatBox label="Cache Creation" value={formatTokens(detail.totalCacheCreationTokens)} info="Tokens written to the prompt cache. Caching reduces cost and latency on repeated context." />
@@ -167,19 +177,8 @@ export function SessionDetailPage() {
             <StatBox label="Turns" value={String(detail.turnCount)} info="Number of conversation turns (user message + assistant response pairs)." />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <SkillsSubagentsSection sessionId={detail.sessionId} commandsUsed={detail.commandsUsed} skillsUsed={detail.skillsUsed} subagentsUsed={detail.subagentsUsed} />
-            <ToolUsageSection toolUsage={detail.toolUsage} mcpToolUsage={detail.mcpToolUsage} />
-          </div>
-        </div>
-
-        {/* Conversation */}
-        <div className="min-w-0">
-          {detail.turns.length > 0 ? (
-            <ConversationTimeline turns={detail.turns} isActive={isActive} showAll={showAllTurns} onShowAll={handleShowAll} />
-          ) : (
-            <EmptyState message="No conversation yet" />
-          )}
+          <SkillsSubagentsSection sessionId={detail.sessionId} commandsUsed={detail.commandsUsed} skillsUsed={detail.skillsUsed} subagentsUsed={detail.subagentsUsed} />
+          <ToolUsageSection toolUsage={detail.toolUsage} mcpToolUsage={detail.mcpToolUsage} />
         </div>
       </div>
     </div>
