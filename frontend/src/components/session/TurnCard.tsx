@@ -88,12 +88,21 @@ export function TurnCard({ turn, isFirst, defaultExpanded, showWorking }: TurnCa
       {expanded && (
         <div>
           {turn.userPrompt && (
-            <div className="text-base text-[var(--text-primary)] mb-2 break-words">
-              <TaskNotificationContent text={turn.userPrompt} />
+            <div className="pb-4 mb-4 border-b border-white/10 break-words">
+              <div className="text-base text-white">
+                <TaskNotificationContent text={turn.userPrompt} />
+              </div>
+              {turn.images && turn.images.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {turn.images.map((img, i) => (
+                    <ImageThumbnail key={i} image={img} />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {turn.images && turn.images.length > 0 && (
+          {!turn.userPrompt && turn.images && turn.images.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-2">
               {turn.images.map((img, i) => (
                 <ImageThumbnail key={i} image={img} />
