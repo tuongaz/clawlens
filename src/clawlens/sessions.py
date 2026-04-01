@@ -7,7 +7,6 @@ import json
 import logging
 import os
 import re
-import time
 from datetime import datetime
 from dataclasses import dataclass
 from pathlib import Path
@@ -333,6 +332,22 @@ def decode_project_path(dirname: str) -> str:
 # ---------------------------------------------------------------------------
 
 
+_INTERRUPT_MARKER = "[Request interrupted by user]"
+
+
+def _is_user_interrupt(content: object) -> bool:
+    """Return True if the user message content is an interrupt (Escape/Ctrl+C)."""
+    if isinstance(content, str):
+        return _INTERRUPT_MARKER in content
+    if isinstance(content, list):
+        for part in content:
+            if isinstance(part, dict) and part.get("type") == "text":
+                text = part.get("text", "")
+                if isinstance(text, str) and _INTERRUPT_MARKER in text:
+                    return True
+    return False
+
+
 def extract_user_text(content: object) -> str:
     """Extract user-visible text from a message content field."""
     if content is None:
@@ -563,8 +578,9 @@ def parse_session(fpath: str) -> Session | None:
                 # Only tool_use means the model is still working; any other
                 # stop reason (end_turn, None, stop_sequence, max_tokens, etc.)
                 # means the turn ended and the session awaits user input.
+                # A user interrupt (Escape/Ctrl+C) also means waiting for input.
                 if msg.type == "user":
-                    waiting_for_input = False
+                    waiting_for_input = _is_user_interrupt(msg.message.content)
                 elif msg.type == "assistant":
                     waiting_for_input = msg.message.stop_reason != "tool_use"
 
@@ -729,8 +745,9 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
                 # Only tool_use means the model is still working; any other
                 # stop reason (end_turn, None, stop_sequence, max_tokens, etc.)
                 # means the turn ended and the session awaits user input.
+                # A user interrupt (Escape/Ctrl+C) also means waiting for input.
                 if msg.type == "user":
-                    waiting_for_input = False
+                    waiting_for_input = _is_user_interrupt(msg.message.content)
                 elif msg.type == "assistant":
                     waiting_for_input = msg.message.stop_reason != "tool_use"
 
@@ -1284,10 +1301,6 @@ def _load_active_info(home: str) -> ActiveInfo:
 
     projects_dir = os.path.join(home, ".claude", "projects")
     matched_jsonls: set[str] = set()
-    unresolved_started_ats: list[float] = []
-
-    _STALE_THRESHOLD = 300  # 5 minutes
-    now = time.time()
 
     # For each PID, only keep the most recently modified registry entry.
     unresolved: list[tuple[float, int, str]] = []  # (started_at, pid, status)
@@ -1299,16 +1312,6 @@ def _load_active_info(home: str) -> ActiveInfo:
         pattern = os.path.join(projects_dir, "*", f"{session_id}.jsonl")
         matches = glob.glob(pattern)
         if matches:
-            # When the registry has no status field, verify the JSONL is fresh.
-            # A stale JSONL with no status means the process has likely moved on
-            # to a different session (e.g. after /clear without updating the registry).
-            if not status:
-                try:
-                    mtime = os.stat(matches[0]).st_mtime
-                    if (now - mtime) >= _STALE_THRESHOLD:
-                        continue
-                except OSError:
-                    continue
             info.session_ids.add(session_id)
             info.session_pids[session_id] = pid
             info.session_statuses[session_id] = status
@@ -1319,9 +1322,6 @@ def _load_active_info(home: str) -> ActiveInfo:
 
     # Resolve resumed sessions by finding JSONL files modified after
     # the process started (excluding files already matched to other PIDs).
-    # A staleness threshold prevents matching JSONL files that haven't been
-    # written to recently — this handles cases where the process is alive but
-    # the session was closed (e.g. process didn't exit cleanly).
     if unresolved:
         all_jsonl = glob.glob(os.path.join(projects_dir, "*", "*.jsonl"))
         for started_at, pid, status in unresolved:
@@ -1335,7 +1335,7 @@ def _load_active_info(home: str) -> ActiveInfo:
                     mtime = os.stat(jpath).st_mtime
                 except OSError:
                     continue
-                if started_at and mtime >= started_at and (now - mtime) < _STALE_THRESHOLD:
+                if started_at and mtime >= started_at:
                     if best is None or mtime > best[0]:
                         sid = os.path.basename(jpath).removesuffix(".jsonl")
                         best = (mtime, sid, jpath)
