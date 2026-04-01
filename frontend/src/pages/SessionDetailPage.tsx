@@ -119,7 +119,7 @@ export function SessionDetailPage() {
         {/* Left: Conversation */}
         <div className="order-2 lg:order-1 min-w-0">
           {detail.turns.length > 0 ? (
-            <ConversationTimeline turns={detail.turns} isActive={isActive} showAll={showAllTurns} onShowAll={handleShowAll} />
+            <ConversationTimeline turns={detail.turns} isActive={isActive} isWaiting={isWaiting} showAll={showAllTurns} onShowAll={handleShowAll} />
           ) : (
             <EmptyState message="No conversation yet" />
           )}

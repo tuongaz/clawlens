@@ -18,6 +18,8 @@ export function ProjectBox({ group, displayName }: ProjectBoxProps) {
   const idleSessions = group.sessions.filter((s) => !s.isActive)
   const hasIdle = idleSessions.length > 0
   const hasActive = activeSessions.length > 0
+  const hasWorking = activeSessions.some((s) => !s.waitingForInput)
+  const projectIsWaiting = hasActive && !hasWorking
 
   const [expanded, setExpanded] = useState(false)
 
@@ -29,7 +31,7 @@ export function ProjectBox({ group, displayName }: ProjectBoxProps) {
     <Card className="bg-transparent border-0 shadow-none">
       <Card.Header className="flex-col gap-0 p-0">
         <div className="flex items-center gap-3 w-full bg-[var(--bg-secondary)] rounded-lg px-4 py-3">
-          <StatusIndicator isActive={hasActive} isWaiting={false} size={8} />
+          <StatusIndicator isActive={hasActive} isWaiting={projectIsWaiting} size={8} />
           <div className="flex flex-col min-w-0">
             <span className="font-mono text-xl font-bold text-[var(--text-bright)] whitespace-nowrap">
               {name}

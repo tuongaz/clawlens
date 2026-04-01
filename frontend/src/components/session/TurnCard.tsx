@@ -8,6 +8,7 @@ interface TurnCardProps {
   isFirst?: boolean
   defaultExpanded?: boolean
   showWorking?: boolean
+  showWaiting?: boolean
 }
 
 function getPreviewText(turn: Turn): string {
@@ -64,7 +65,7 @@ function ImageThumbnail({ image }: { image: UserImage }) {
   )
 }
 
-export function TurnCard({ turn, isFirst, defaultExpanded, showWorking }: TurnCardProps) {
+export function TurnCard({ turn, isFirst, defaultExpanded, showWorking, showWaiting }: TurnCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded ?? true)
 
   return (
@@ -145,6 +146,11 @@ export function TurnCard({ turn, isFirst, defaultExpanded, showWorking }: TurnCa
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]" style={{ animation: 'dot-blink 1.4s ease-in-out 0.2s infinite' }} />
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]" style={{ animation: 'dot-blink 1.4s ease-in-out 0.4s infinite' }} />
               </div>
+            </div>
+          )}
+          {showWaiting && (
+            <div className="mt-3 text-sm text-warning" style={{ animation: 'pulse-blink 2s ease-in-out infinite' }}>
+              Waiting for user input…
             </div>
           )}
         </div>

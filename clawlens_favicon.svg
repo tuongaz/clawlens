@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#863BFF" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#863BFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="200" height="200" rx="42" fill="#0D0A16"/>
+
+  <!-- Hawk eye — two arcs meeting at sharp points -->
+  <!-- Upper lid -->
+  <path d="M 28,100 Q 60,42 100,38 Q 140,42 172,100"
+        stroke="#863BFF" stroke-width="7.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Lower lid -->
+  <path d="M 28,100 Q 60,158 100,162 Q 140,158 172,100"
+        stroke="#863BFF" stroke-width="7.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Pupil glow -->
+  <circle cx="100" cy="100" r="22" fill="url(#glow)"/>
+
+  <!-- Pupil -->
+  <circle cx="100" cy="100" r="14" fill="#863BFF"/>
+
+  <!-- Center highlight -->
+  <circle cx="100" cy="100" r="5" fill="#EDE6FF" opacity="0.85"/>
+</svg>

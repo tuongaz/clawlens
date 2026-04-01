@@ -283,12 +283,49 @@ def _truncate_keep_newlines(s: str, max_len: int) -> str:
 def decode_project_path(dirname: str) -> str:
     """Decode a project directory name back into a filesystem path.
 
-    The directory name encodes a path by replacing "/" with "-".
-    e.g. "-Users-tuongaz-dev-foo" -> "/Users/tuongaz/dev/foo"
+    Claude Code's sanitizePath() replaces non-alphanumeric chars (including
+    path separators) with hyphens.  A naive replace-all is lossy when the
+    original path contains hyphens.  We verify each component against the
+    real filesystem, merging segments with hyphens when a split component
+    doesn't exist.
     """
     if not dirname:
         return ""
-    return dirname.replace("-", "/")
+
+    parts = dirname.split("-")
+    if not parts:
+        return dirname
+
+    result = ""
+    i = 0
+    if parts[0] == "":
+        result = "/"
+        i = 1
+
+    while i < len(parts):
+        candidate = os.path.join(result, parts[i]) if result else parts[i]
+        if os.path.exists(candidate):
+            result = candidate
+            i += 1
+            continue
+
+        merged = parts[i]
+        found = False
+        for j in range(i + 1, len(parts)):
+            merged += "-" + parts[j]
+            candidate = os.path.join(result, merged) if result else merged
+            if os.path.exists(candidate):
+                result = candidate
+                i = j + 1
+                found = True
+                break
+
+        if not found:
+            remaining = "/".join(parts[i:])
+            result = os.path.join(result, remaining) if result else remaining
+            break
+
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -470,6 +507,8 @@ def parse_session(fpath: str) -> Session | None:
 
     session_id = ""
     session_name = ""
+    custom_title = ""
+    ai_title = ""
     cwd = ""
     git_branch = ""
     version = ""
@@ -512,17 +551,22 @@ def parse_session(fpath: str) -> Session | None:
                 if msg.version:
                     version = msg.version
 
-                # Extract session name from agent-name entries.
+                # Extract session name from title/agent-name entries.
                 if msg.type == "agent-name" and msg.agent_name:
                     session_name = msg.agent_name
+                if msg.type == "custom-title" and msg.custom_title:
+                    custom_title = msg.custom_title
+                if msg.type == "ai-title" and msg.ai_title:
+                    ai_title = msg.ai_title
 
                 # Track whether session is waiting for user input.
+                # Only tool_use means the model is still working; any other
+                # stop reason (end_turn, None, stop_sequence, max_tokens, etc.)
+                # means the turn ended and the session awaits user input.
                 if msg.type == "user":
                     waiting_for_input = False
-                elif msg.type == "assistant" and msg.message.stop_reason == "end_turn":
-                    waiting_for_input = True
-                elif msg.type == "assistant" and msg.message.stop_reason == "tool_use":
-                    waiting_for_input = False
+                elif msg.type == "assistant":
+                    waiting_for_input = msg.message.stop_reason != "tool_use"
 
                 # Extract user prompts.
                 if msg.type == "user":
@@ -567,7 +611,7 @@ def parse_session(fpath: str) -> Session | None:
 
     return Session(
         session_id=session_id,
-        name=session_name,
+        name=custom_title or ai_title or session_name,
         cwd=cwd,
         git_branch=git_branch,
         timestamp=last_ts,
@@ -591,6 +635,8 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
     # Metadata (mirrors parse_session)
     session_id = ""
     session_name = ""
+    custom_title = ""
+    ai_title = ""
     cwd = ""
     git_branch = ""
     first_ts = ""
@@ -673,6 +719,10 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
                     version = msg.version
                 if msg.type == "agent-name" and msg.agent_name:
                     session_name = msg.agent_name
+                if msg.type == "custom-title" and msg.custom_title:
+                    custom_title = msg.custom_title
+                if msg.type == "ai-title" and msg.ai_title:
+                    ai_title = msg.ai_title
 
                 # Track waiting state.
                 if msg.type == "user":
@@ -868,7 +918,7 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
 
     return SessionDetail(
         session_id=session_id,
-        name=session_name,
+        name=custom_title or ai_title or session_name,
         cwd=cwd,
         git_branch=git_branch,
         timestamp=last_ts,
@@ -915,6 +965,20 @@ def enrich_session_detail(detail: SessionDetail, fpath: str) -> None:
     detail.is_active = _is_session_active(
         detail.session_id, detail.cwd, fpath, active_info
     )
+    # Use PID file status for active sessions (more accurate than JSONL inference).
+    # Fall back to file staleness: if the JSONL hasn't been written to in 30s,
+    # the session is likely idle/waiting even without a PID status field.
+    if detail.is_active:
+        status = active_info.session_statuses.get(detail.session_id, "")
+        if status:
+            detail.waiting_for_input = status == "waiting" or status == "idle"
+        else:
+            try:
+                mtime = os.stat(fpath).st_mtime
+                if time.time() - mtime > 30:
+                    detail.waiting_for_input = True
+            except OSError:
+                pass
 
     ide_dir = os.path.join(home, ".claude", "ide")
     ide_pid_map = load_ide_pid_map(ide_dir)
@@ -1120,6 +1184,7 @@ class ActiveInfo:
 
     session_ids: set[str]
     session_pids: dict[str, int]  # session_id -> pid
+    session_statuses: dict[str, str]  # session_id -> status ("busy"|"idle"|"waiting")
 
 
 def _load_active_info(home: str) -> ActiveInfo:
@@ -1133,7 +1198,7 @@ def _load_active_info(home: str) -> ActiveInfo:
     file), resolves the actual session by finding the most recently modified
     JSONL file updated after the process started.
     """
-    info = ActiveInfo(session_ids=set(), session_pids={})
+    info = ActiveInfo(session_ids=set(), session_pids={}, session_statuses={})
     sessions_dir = os.path.join(home, ".claude", "sessions")
 
     try:
@@ -1142,8 +1207,8 @@ def _load_active_info(home: str) -> ActiveInfo:
         return info
 
     # Collect all live registry entries grouped by PID so we can deduplicate.
-    # pid -> list of (file_mod_time, session_id, started_at_sec)
-    pid_entries: dict[int, list[tuple[float, str, float]]] = {}
+    # pid -> list of (file_mod_time, session_id, started_at_sec, status)
+    pid_entries: dict[int, list[tuple[float, str, float, str]]] = {}
 
     for name in entries:
         if not name.endswith(".json"):
@@ -1168,40 +1233,53 @@ def _load_active_info(home: str) -> ActiveInfo:
         except (OSError, ProcessLookupError):
             continue
 
+        status = data.get("status", "")
         started_at = started_at_ms / 1000 if isinstance(started_at_ms, (int, float)) else 0.0
-        pid_entries.setdefault(pid, []).append((stat.st_mtime, session_id, started_at))
+        pid_entries.setdefault(pid, []).append((stat.st_mtime, session_id, started_at, status))
 
     projects_dir = os.path.join(home, ".claude", "projects")
     matched_jsonls: set[str] = set()
     unresolved_started_ats: list[float] = []
 
+    _STALE_THRESHOLD = 300  # 5 minutes
+    now = time.time()
+
     # For each PID, only keep the most recently modified registry entry.
-    unresolved: list[tuple[float, int]] = []  # (started_at, pid)
+    unresolved: list[tuple[float, int, str]] = []  # (started_at, pid, status)
     for pid, elist in pid_entries.items():
         elist.sort(reverse=True)  # newest first by mod_time
-        _, session_id, started_at = elist[0]
+        _, session_id, started_at, status = elist[0]
 
         # Check if this session ID has a corresponding JSONL file.
         pattern = os.path.join(projects_dir, "*", f"{session_id}.jsonl")
         matches = glob.glob(pattern)
         if matches:
+            # When the registry has no status field, verify the JSONL is fresh.
+            # A stale JSONL with no status means the process has likely moved on
+            # to a different session (e.g. after /clear without updating the registry).
+            if not status:
+                try:
+                    mtime = os.stat(matches[0]).st_mtime
+                    if (now - mtime) >= _STALE_THRESHOLD:
+                        continue
+                except OSError:
+                    continue
             info.session_ids.add(session_id)
             info.session_pids[session_id] = pid
+            info.session_statuses[session_id] = status
             matched_jsonls.update(matches)
         else:
             # Resumed session – registry ID doesn't match any JSONL file.
-            unresolved.append((started_at, pid))
+            unresolved.append((started_at, pid, status))
 
     # Resolve resumed sessions by finding JSONL files modified after
     # the process started (excluding files already matched to other PIDs).
     # A staleness threshold prevents matching JSONL files that haven't been
     # written to recently — this handles cases where the process is alive but
     # the session was closed (e.g. process didn't exit cleanly).
-    _STALE_THRESHOLD = 300  # 5 minutes
     if unresolved:
-        now = time.time()
         all_jsonl = glob.glob(os.path.join(projects_dir, "*", "*.jsonl"))
-        for started_at, pid in unresolved:
+        for started_at, pid, status in unresolved:
             best: tuple[float, str, str] | None = None  # (mtime, session_id, path)
             for jpath in all_jsonl:
                 if jpath in matched_jsonls:
@@ -1220,6 +1298,7 @@ def _load_active_info(home: str) -> ActiveInfo:
             if best is not None:
                 info.session_ids.add(best[1])
                 info.session_pids[best[1]] = pid
+                info.session_statuses[best[1]] = status
                 matched_jsonls.add(best[2])
 
     return info
@@ -1361,6 +1440,19 @@ def load_grouped_sessions(limit: int = 0) -> list[ProjectGroup]:
     # Assign active status, project name, IDE client.
     for fpath, sess in parsed:
         sess.is_active = sess.session_id in active_info.session_ids
+        # Use PID file status for active sessions (more accurate than JSONL inference).
+        # Fall back to file staleness when no PID status field is available.
+        if sess.is_active:
+            status = active_info.session_statuses.get(sess.session_id, "")
+            if status:
+                sess.waiting_for_input = status == "waiting" or status == "idle"
+            else:
+                try:
+                    mtime = os.stat(fpath).st_mtime
+                    if now - mtime > 30:
+                        sess.waiting_for_input = True
+                except OSError:
+                    pass
 
         dir_name = os.path.basename(os.path.dirname(fpath))
         sess.project_name = decode_project_path(dir_name)

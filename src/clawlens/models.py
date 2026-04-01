@@ -199,6 +199,8 @@ class Message(BaseModel):
     subtype: str = ""
     content: Any = None
     agent_name: str = ""
+    custom_title: str = ""
+    ai_title: str = ""
     session_id: str = ""
     cwd: str = ""
     git_branch: str = ""

@@ -11,6 +11,7 @@ const INITIAL_TURNS_SHOWN = 30
 interface ConversationTimelineProps {
   turns: Turn[]
   isActive: boolean
+  isWaiting: boolean
   showAll: boolean
   onShowAll: () => void
 }
@@ -21,7 +22,7 @@ function formatTime(ts: string): string {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
-export function ConversationTimeline({ turns, isActive, showAll, onShowAll }: ConversationTimelineProps) {
+export function ConversationTimeline({ turns, isActive, isWaiting, showAll, onShowAll }: ConversationTimelineProps) {
   const visibleTurns = showAll ? turns : turns.slice(0, INITIAL_TURNS_SHOWN)
   const hasMore = turns.length > INITIAL_TURNS_SHOWN
   const firstTimestamp = turns.length > 0 ? new Date(turns[0].timestamp).getTime() : 0
@@ -202,7 +203,7 @@ export function ConversationTimeline({ turns, isActive, showAll, onShowAll }: Co
               </div>
               {/* Turn card */}
               <div className="flex-1 min-w-0 pb-2">
-                <TurnCard turn={turn} isFirst={turn.index === 1} defaultExpanded={allExpanded} showWorking={isActive && isLast && (Date.now() - new Date(turn.timestamp).getTime()) < 5 * 60 * 1000} />
+                <TurnCard turn={turn} isFirst={turn.index === 1} defaultExpanded={allExpanded} showWorking={isActive && isLast && !isWaiting && (Date.now() - new Date(turn.timestamp).getTime()) < 5 * 60 * 1000} showWaiting={isActive && isLast && isWaiting} />
               </div>
             </div>
           )

@@ -1,16 +1,10 @@
 const PULSE_STYLE = { animation: 'pulse-blink 2s ease-in-out infinite' }
 
-const WaitingIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 16 16" fill="currentColor">
-    <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm3.75-1a.75.75 0 0 1 .75-.75h4a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1-.75-.75Zm0 3a.75.75 0 0 1 .75-.75h2a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1-.75-.75Z" />
-  </svg>
-)
-
 /**
- * Blinking status indicator dot/icon for session state.
+ * Status indicator for session state.
  *
- * - active + not waiting → green pulsing dot
- * - active + waiting → yellow pulsing pause icon
+ * - active + working → green blinking dot
+ * - active + waiting → green dot + amber ring
  * - inactive → grey dot
  */
 export function StatusIndicator({
@@ -24,9 +18,11 @@ export function StatusIndicator({
 }) {
   if (isActive && isWaiting) {
     return (
-      <span className="inline-flex items-center text-warning shrink-0" style={PULSE_STYLE} title="Waiting for input">
-        <WaitingIcon size={size * 2} />
-      </span>
+      <span
+        className="inline-block rounded-full bg-warning shrink-0"
+        style={{ width: size, height: size, boxShadow: '0 0 8px rgba(234,179,8,0.5)', ...PULSE_STYLE }}
+        title="Waiting for input"
+      />
     )
   }
 
@@ -35,6 +31,7 @@ export function StatusIndicator({
       <span
         className="inline-block rounded-full bg-success shrink-0"
         style={{ width: size, height: size, boxShadow: '0 0 8px rgba(63,185,80,0.5)', ...PULSE_STYLE }}
+        title="Working"
       />
     )
   }
@@ -43,6 +40,7 @@ export function StatusIndicator({
     <span
       className="inline-block rounded-full bg-[var(--text-secondary)] opacity-40 shrink-0"
       style={{ width: size, height: size }}
+      title="Inactive"
     />
   )
 }
