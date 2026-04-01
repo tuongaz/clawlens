@@ -65,6 +65,25 @@ function ImageThumbnail({ image }: { image: UserImage }) {
   )
 }
 
+function ToolExtraToggle({ extra }: { extra: string }) {
+  const [show, setShow] = useState(false)
+  return (
+    <>
+      <button
+        className="text-xs text-[var(--accent-cyan)] hover:text-[var(--accent-cyan)] opacity-60 hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+        onClick={() => setShow(!show)}
+      >
+        {show ? 'hide' : 'view'}
+      </button>
+      {show && (
+        <div className="basis-full ml-[calc(0.375rem+0.375rem)] pl-2 border-l border-[var(--border)] text-[13px] font-mono text-gray-500 break-all">
+          {extra}
+        </div>
+      )}
+    </>
+  )
+}
+
 export function TurnCard({ turn, isFirst, defaultExpanded, showWorking, showWaiting }: TurnCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded ?? true)
 
@@ -116,18 +135,16 @@ export function TurnCard({ turn, isFirst, defaultExpanded, showWorking, showWait
               {turn.events.map((ev, i) =>
                 ev.kind === 'tool' ? (
                   <div key={i} className="flex flex-col">
-                    <div className="flex items-start gap-1.5 text-base font-mono">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)] shrink-0 mt-[0.45em]" />
+                    <div className="flex items-baseline gap-1.5 text-base font-mono flex-wrap">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)] shrink-0 self-center" />
                       <span className="text-[var(--text-primary)] font-bold shrink-0">{ev.toolName}</span>
                       {ev.toolDetail && (
-                        <span className="text-[var(--text-secondary)] break-all">{ev.toolDetail}</span>
+                        <span className="text-[13px] text-[var(--text-secondary)] break-all">{ev.toolDetail}</span>
+                      )}
+                      {ev.toolExtra && (
+                        <ToolExtraToggle extra={ev.toolExtra} />
                       )}
                     </div>
-                    {ev.toolExtra && (
-                      <div className="ml-[calc(0.375rem+0.375rem)] pl-2 border-l border-[var(--border)] text-sm font-mono text-gray-500 break-all">
-                        {ev.toolExtra}
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <div key={i} className="flex gap-1.5 text-base text-[var(--text-primary)] break-words">
