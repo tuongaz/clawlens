@@ -15,9 +15,8 @@ function fmtTokens(n: number): string {
 }
 
 function shortenModel(name: string): string {
-  // e.g. "claude-sonnet-4-20250514" → "sonnet-4"
-  const match = name.match(/claude-(\w+-\d+(?:\.\d+)?)/)
-  return match ? match[1] : name.replace('claude-', '').split('-').slice(0, 2).join('-')
+  // e.g. "claude-opus-4-6-20250514" → "opus-4-6"
+  return name.replace(/^claude-/, '').replace(/-\d{8,}$/, '')
 }
 
 export function ModelUsageChart({ userInteractions }: ModelUsageChartProps) {
