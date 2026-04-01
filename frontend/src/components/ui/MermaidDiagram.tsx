@@ -32,7 +32,7 @@ function loadMermaid(): Promise<void> {
           nodeTextColor: '#e6edf3',
         },
         securityLevel: 'loose',
-        fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif',
       })
       mermaidLoaded = true
       resolve()

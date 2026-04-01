@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import re
+import time
 from datetime import datetime
 from dataclasses import dataclass
 from pathlib import Path
@@ -967,6 +968,9 @@ def parse_session_detail(fpath: str) -> SessionDetail | None:
     )
 
 
+_WAITING_THRESHOLD_SECS = 5  # seconds before status is considered "waiting for input"
+
+
 def _apply_active_status(
     sess: Session | SessionDetail, active_info: ActiveInfo
 ) -> None:
@@ -974,8 +978,10 @@ def _apply_active_status(
     sess.is_active = sess.session_id in active_info.session_ids
     if sess.is_active:
         status = active_info.session_statuses.get(sess.session_id, "")
-        if status:
-            sess.waiting_for_input = status == "waiting" or status == "idle"
+        if status and (status == "waiting" or status == "idle"):
+            mtime = active_info.session_status_mtimes.get(sess.session_id, 0.0)
+            if mtime and (time.time() - mtime) >= _WAITING_THRESHOLD_SECS:
+                sess.waiting_for_input = True
 
 
 def enrich_session_detail(detail: SessionDetail, fpath: str) -> None:
@@ -1119,34 +1125,53 @@ def _enrich_continuation_links(
     if detail_idx < 0:
         return
 
-    # Check predecessor: if this detail is a /clear start, look at the
-    # immediately preceding session.
-    if detail.is_clear_start and detail_idx > 0:
-        prev_start, prev_end, prev_id, _ = all_entries[detail_idx - 1]
-        if prev_end and detail_first_ts:
-            try:
-                gap = (
-                    datetime.fromisoformat(detail_first_ts)
-                    - datetime.fromisoformat(prev_end)
-                ).total_seconds()
-                if 0 <= gap <= _CLEAR_GAP_THRESHOLD:
-                    detail.continued_from = prev_id
-            except (ValueError, TypeError):
-                pass
+    # Check predecessor: if this detail is a /clear start, search backward
+    # for the best predecessor (smallest non-negative gap).  We cannot just
+    # use detail_idx-1 because sessions from different processes interleave.
+    if detail.is_clear_start and detail_first_ts:
+        try:
+            detail_start_dt = datetime.fromisoformat(detail_first_ts)
+        except (ValueError, TypeError):
+            detail_start_dt = None
+        if detail_start_dt is not None:
+            best_gap = float("inf")
+            best_id = ""
+            for j in range(detail_idx - 1, -1, -1):
+                _, cand_end, cand_id, _ = all_entries[j]
+                if not cand_end:
+                    continue
+                try:
+                    gap = (detail_start_dt - datetime.fromisoformat(cand_end)).total_seconds()
+                except (ValueError, TypeError):
+                    continue
+                if 0 <= gap <= _CLEAR_GAP_THRESHOLD and gap < best_gap:
+                    best_gap = gap
+                    best_id = cand_id
+            if best_id:
+                detail.continued_from = best_id
 
-    # Check successor: link only if the next session is a /clear start.
-    if detail_idx < len(all_entries) - 1:
-        next_start, next_end, next_id, next_clear = all_entries[detail_idx + 1]
-        if next_clear and next_start and detail_last_ts:
-            try:
-                gap = (
-                    datetime.fromisoformat(next_start)
-                    - datetime.fromisoformat(detail_last_ts)
-                ).total_seconds()
-                if 0 <= gap <= _CLEAR_GAP_THRESHOLD:
-                    detail.continued_as = next_id
-            except (ValueError, TypeError):
-                pass
+    # Check successor: search forward for the best /clear-start successor.
+    if detail_last_ts:
+        try:
+            detail_end_dt = datetime.fromisoformat(detail_last_ts)
+        except (ValueError, TypeError):
+            detail_end_dt = None
+        if detail_end_dt is not None:
+            best_gap = float("inf")
+            best_id = ""
+            for j in range(detail_idx + 1, len(all_entries)):
+                next_start, _, next_id, next_clear = all_entries[j]
+                if not next_clear or not next_start:
+                    continue
+                try:
+                    gap = (datetime.fromisoformat(next_start) - detail_end_dt).total_seconds()
+                except (ValueError, TypeError):
+                    continue
+                if 0 <= gap <= _CLEAR_GAP_THRESHOLD and gap < best_gap:
+                    best_gap = gap
+                    best_id = next_id
+            if best_id:
+                detail.continued_as = best_id
 
 
 def _link_continuation_from_list(
@@ -1190,35 +1215,52 @@ def _link_continuation_from_list(
     if detail_idx < 0:
         return
 
-    # Check predecessor: if this detail is a /clear start, look at the
-    # immediately preceding session.
-    if detail.is_clear_start and detail_idx > 0:
-        prev_start, prev_end, prev_id, _ = all_sessions[detail_idx - 1]
-        if prev_end and detail.start_timestamp:
-            try:
-                gap = (
-                    datetime.fromisoformat(detail.start_timestamp)
-                    - datetime.fromisoformat(prev_end)
-                ).total_seconds()
-                if 0 <= gap <= _CLEAR_GAP_THRESHOLD:
-                    detail.continued_from = prev_id
-            except (ValueError, TypeError):
-                pass
+    # Check predecessor: if this detail is a /clear start, search backward
+    # for the best predecessor (smallest non-negative gap).
+    if detail.is_clear_start and detail.start_timestamp:
+        try:
+            detail_start_dt = datetime.fromisoformat(detail.start_timestamp)
+        except (ValueError, TypeError):
+            detail_start_dt = None
+        if detail_start_dt is not None:
+            best_gap = float("inf")
+            best_id = ""
+            for j in range(detail_idx - 1, -1, -1):
+                _, cand_end, cand_id, _ = all_sessions[j]
+                if not cand_end:
+                    continue
+                try:
+                    gap = (detail_start_dt - datetime.fromisoformat(cand_end)).total_seconds()
+                except (ValueError, TypeError):
+                    continue
+                if 0 <= gap <= _CLEAR_GAP_THRESHOLD and gap < best_gap:
+                    best_gap = gap
+                    best_id = cand_id
+            if best_id:
+                detail.continued_from = best_id
 
-    # Check successor: look at the next session; link only if it is a
-    # /clear start.
-    if detail_idx < len(all_sessions) - 1:
-        next_start, next_end, next_id, next_clear = all_sessions[detail_idx + 1]
-        if next_clear and next_start and detail.timestamp:
-            try:
-                gap = (
-                    datetime.fromisoformat(next_start)
-                    - datetime.fromisoformat(detail.timestamp)
-                ).total_seconds()
-                if 0 <= gap <= _CLEAR_GAP_THRESHOLD:
-                    detail.continued_as = next_id
-            except (ValueError, TypeError):
-                pass
+    # Check successor: search forward for the best /clear-start successor.
+    if detail.timestamp:
+        try:
+            detail_end_dt = datetime.fromisoformat(detail.timestamp)
+        except (ValueError, TypeError):
+            detail_end_dt = None
+        if detail_end_dt is not None:
+            best_gap = float("inf")
+            best_id = ""
+            for j in range(detail_idx + 1, len(all_sessions)):
+                next_start, _, next_id, next_clear = all_sessions[j]
+                if not next_clear or not next_start:
+                    continue
+                try:
+                    gap = (datetime.fromisoformat(next_start) - detail_end_dt).total_seconds()
+                except (ValueError, TypeError):
+                    continue
+                if 0 <= gap <= _CLEAR_GAP_THRESHOLD and gap < best_gap:
+                    best_gap = gap
+                    best_id = next_id
+            if best_id:
+                detail.continued_as = best_id
 
 
 # ---------------------------------------------------------------------------
@@ -1247,6 +1289,7 @@ class ActiveInfo:
     session_ids: set[str]
     session_pids: dict[str, int]  # session_id -> pid
     session_statuses: dict[str, str]  # session_id -> status ("busy"|"idle"|"waiting")
+    session_status_mtimes: dict[str, float]  # session_id -> mtime of status file
 
 
 def _load_active_info(home: str) -> ActiveInfo:
@@ -1260,7 +1303,7 @@ def _load_active_info(home: str) -> ActiveInfo:
     file), resolves the actual session by finding the most recently modified
     JSONL file updated after the process started.
     """
-    info = ActiveInfo(session_ids=set(), session_pids={}, session_statuses={})
+    info = ActiveInfo(session_ids=set(), session_pids={}, session_statuses={}, session_status_mtimes={})
     sessions_dir = os.path.join(home, ".claude", "sessions")
 
     try:
@@ -1303,10 +1346,10 @@ def _load_active_info(home: str) -> ActiveInfo:
     matched_jsonls: set[str] = set()
 
     # For each PID, only keep the most recently modified registry entry.
-    unresolved: list[tuple[float, int, str]] = []  # (started_at, pid, status)
+    unresolved: list[tuple[float, int, str, float]] = []  # (started_at, pid, status, file_mtime)
     for pid, elist in pid_entries.items():
         elist.sort(reverse=True)  # newest first by mod_time
-        _, session_id, started_at, status = elist[0]
+        file_mtime, session_id, started_at, status = elist[0]
 
         # Check if this session ID has a corresponding JSONL file.
         pattern = os.path.join(projects_dir, "*", f"{session_id}.jsonl")
@@ -1315,16 +1358,17 @@ def _load_active_info(home: str) -> ActiveInfo:
             info.session_ids.add(session_id)
             info.session_pids[session_id] = pid
             info.session_statuses[session_id] = status
+            info.session_status_mtimes[session_id] = file_mtime
             matched_jsonls.update(matches)
         else:
             # Resumed session – registry ID doesn't match any JSONL file.
-            unresolved.append((started_at, pid, status))
+            unresolved.append((started_at, pid, status, file_mtime))
 
     # Resolve resumed sessions by finding JSONL files modified after
     # the process started (excluding files already matched to other PIDs).
     if unresolved:
         all_jsonl = glob.glob(os.path.join(projects_dir, "*", "*.jsonl"))
-        for started_at, pid, status in unresolved:
+        for started_at, pid, status, file_mtime in unresolved:
             best: tuple[float, str, str] | None = None  # (mtime, session_id, path)
             for jpath in all_jsonl:
                 if jpath in matched_jsonls:
@@ -1344,6 +1388,7 @@ def _load_active_info(home: str) -> ActiveInfo:
                 info.session_ids.add(best[1])
                 info.session_pids[best[1]] = pid
                 info.session_statuses[best[1]] = status
+                info.session_status_mtimes[best[1]] = file_mtime
                 matched_jsonls.add(best[2])
 
     return info
@@ -1412,23 +1457,36 @@ def _link_continuation_sessions(
             if not sess.is_clear_start:
                 continue
 
-            # Quick check: is this session's start very close to the
-            # predecessor's end?
-            prev = by_start[i - 1]
-            if not sess.start_timestamp or not prev.timestamp:
+            if not sess.start_timestamp:
                 continue
 
             try:
                 start_dt = datetime.fromisoformat(sess.start_timestamp)
-                prev_end_dt = datetime.fromisoformat(prev.timestamp)
             except (ValueError, TypeError):
                 continue
 
-            gap = (start_dt - prev_end_dt).total_seconds()
-            if 0 <= gap <= _CLEAR_GAP_THRESHOLD:
-                # Link them.
-                prev.continued_as = sess.session_id
-                sess.continued_from = prev.session_id
+            # Search backward for the best predecessor: the one with the
+            # smallest non-negative gap.  We cannot simply use by_start[i-1]
+            # because sessions from *different* processes may interleave in
+            # start-time order (e.g. two terminals both doing /clear).
+            best_prev: Session | None = None
+            best_gap = float("inf")
+            for j in range(i - 1, -1, -1):
+                cand = by_start[j]
+                if cand.continued_as or not cand.timestamp:
+                    continue
+                try:
+                    cand_end_dt = datetime.fromisoformat(cand.timestamp)
+                except (ValueError, TypeError):
+                    continue
+                gap = (start_dt - cand_end_dt).total_seconds()
+                if 0 <= gap <= _CLEAR_GAP_THRESHOLD and gap < best_gap:
+                    best_prev = cand
+                    best_gap = gap
+
+            if best_prev is not None:
+                best_prev.continued_as = sess.session_id
+                sess.continued_from = best_prev.session_id
 
 
 # ---------------------------------------------------------------------------
@@ -1495,6 +1553,40 @@ def load_grouped_sessions(limit: int = 0) -> list[ProjectGroup]:
 
     # Link continuation sessions within each project.
     _link_continuation_sessions(project_map)
+
+    # Propagate active status through /clear continuation chains.
+    # The registry may point to any session in the chain (often the first),
+    # so propagate both forward (continued_as) and backward (continued_from).
+    for sessions in project_map.values():
+        by_id = {s.session_id: s for s in sessions}
+        for sess in sessions:
+            if not sess.is_active:
+                continue
+            pid = active_info.session_pids.get(sess.session_id)
+            # Propagate backward through continued_from.
+            cur = sess
+            while cur.continued_from:
+                prev = by_id.get(cur.continued_from)
+                if not prev or prev.is_active:
+                    break
+                prev.is_active = True
+                if pid:
+                    active_info.session_ids.add(prev.session_id)
+                    active_info.session_pids[prev.session_id] = pid
+                    prev.client = resolve_client_for_pid(pid, ide_pid_map)
+                cur = prev
+            # Propagate forward through continued_as.
+            cur = sess
+            while cur.continued_as:
+                nxt = by_id.get(cur.continued_as)
+                if not nxt or nxt.is_active:
+                    break
+                nxt.is_active = True
+                if pid:
+                    active_info.session_ids.add(nxt.session_id)
+                    active_info.session_pids[nxt.session_id] = pid
+                    nxt.client = resolve_client_for_pid(pid, ide_pid_map)
+                cur = nxt
 
     # Build project groups.
     groups: list[ProjectGroup] = []

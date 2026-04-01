@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { Card } from '@heroui/react'
 import { useNavigate } from 'react-router-dom'
+import { Keyboard } from 'lucide-react'
 import type { Session } from '../types'
 import { timeAgo, formatElapsed } from '../utils'
 import { StatusIndicator, ActiveDot } from './StatusIndicator'
@@ -40,7 +41,7 @@ export const SessionCard = memo(function SessionCard({ session, projectPath }: S
               {slug}
             </span>
             {isWaiting && (
-              <span className="text-warning/70 text-xs font-mono">Waiting for input</span>
+              <span title="Waiting for user input"><Keyboard className="text-warning/70 shrink-0" size={14} /></span>
             )}
           </>
         ) : (
@@ -49,7 +50,7 @@ export const SessionCard = memo(function SessionCard({ session, projectPath }: S
               {slug}
             </span>
             {isWaiting && (
-              <span className="text-warning/70 text-xs font-mono">Waiting for input</span>
+              <span title="Waiting for user input"><Keyboard className="text-warning/70 shrink-0" size={14} /></span>
             )}
           </>
         )}

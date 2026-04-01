@@ -251,7 +251,7 @@ function buildFallbackSvg(elements: Record<string, unknown>[]): SVGSVGElement {
         textEl.setAttribute('x', String(x))
         textEl.setAttribute('fill', adjustedStroke)
         textEl.setAttribute('font-size', String(fontSize))
-        textEl.setAttribute('font-family', 'ui-monospace, SFMono-Regular, monospace')
+        textEl.setAttribute('font-family', '-apple-system, BlinkMacSystemFont, Segoe UI, Noto Sans, Helvetica, Arial, sans-serif')
         textEl.setAttribute('opacity', opacity)
         // Multi-line text
         const lines = textContent.split('\n')

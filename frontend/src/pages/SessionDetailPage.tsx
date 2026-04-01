@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useParams, Outlet, Link } from 'react-router-dom'
-import { Brain, ArrowLeft, ArrowRight } from 'lucide-react'
-import { Chip, Meter, Spinner } from '@heroui/react'
+import { Brain, ArrowLeft, ArrowRight, Keyboard } from 'lucide-react'
+import { Chip, Meter, Skeleton } from '@heroui/react'
 import { useSessionDetail } from '../hooks/useSessionDetail'
 import { StatusIndicator } from '../components/StatusIndicator'
 import { Header } from '../components/Header'
@@ -19,8 +19,45 @@ export function SessionDetailPage() {
     return (
       <div className="w-full min-h-screen">
         <Header />
-        <div className="flex items-center justify-center py-20">
-          <Spinner size="lg" />
+        <div className="pl-8 pr-4 py-6 pb-0 max-sm:px-4 max-sm:py-4 max-sm:pb-0">
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-2.5 h-2.5 rounded-full" />
+            <Skeleton className="w-40 h-8 rounded" />
+            <span className="text-3xl text-[var(--text-secondary)] font-light opacity-30">&mdash;</span>
+            <Skeleton className="w-24 h-8 rounded" />
+            <div className="flex items-center gap-2 ml-auto">
+              <Skeleton className="w-20 h-6 rounded-full" />
+              <Skeleton className="w-32 h-5 rounded" />
+            </div>
+          </div>
+        </div>
+        <div className="pl-8 pr-4 py-6 max-sm:px-4 max-sm:py-4 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10">
+          <div className="order-2 lg:order-1 min-w-0 space-y-6">
+            {Array.from({ length: 4 }, (_, i) => (
+              <div key={i} className="flex gap-3">
+                <Skeleton className="w-6 h-6 rounded-full shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="w-24 h-3 rounded" />
+                  <Skeleton className="w-full h-16 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="order-1 lg:order-2 space-y-4">
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-4 space-y-3">
+                <Skeleton className="w-28 h-4 rounded" />
+                <div className="grid grid-cols-2 gap-2">
+                  {Array.from({ length: i === 0 ? 4 : 2 }, (_, j) => (
+                    <div key={j} className="bg-[var(--bg-primary)] rounded-lg p-3 space-y-1.5">
+                      <Skeleton className="w-16 h-3 rounded" />
+                      <Skeleton className="w-12 h-5 rounded" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     )
@@ -68,14 +105,14 @@ export function SessionDetailPage() {
               <span className="text-3xl font-semibold text-[var(--text-bright)]">{detail.name}</span>
               <span className="text-[var(--text-secondary)] opacity-50 font-mono text-base">{slug}</span>
               {isWaiting && (
-                <span className="text-warning/70 text-sm font-mono">Waiting for input</span>
+                <span title="Waiting for user input"><Keyboard className="text-warning/70 shrink-0" size={16} /></span>
               )}
             </>
           ) : (
             <>
               <span className="text-3xl font-mono font-semibold text-[var(--text-bright)]">{slug}</span>
               {isWaiting && (
-                <span className="text-warning/70 text-sm font-mono">Waiting for input</span>
+                <span title="Waiting for user input"><Keyboard className="text-warning/70 shrink-0" size={16} /></span>
               )}
             </>
           )}

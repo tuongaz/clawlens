@@ -84,12 +84,7 @@ export function Dashboard() {
   return (
     <>
       <Header>
-        <span className="text-[var(--text-secondary)] text-sm pl-3.5 border-l border-[var(--border)]">
-          {totalSessions} session{totalSessions !== 1 ? 's' : ''}
-          {activeSessions > 0 && <> &middot; {activeSessions} active</>}
-          {' '}&middot; {projectCount} project{projectCount !== 1 ? 's' : ''}
-        </span>
-
+        <div className="flex items-center gap-0 ml-auto">
         {stats && (
           <div className="flex items-center gap-4 px-4 border-l border-r border-[var(--border)] max-sm:border-none max-sm:px-0">
             {([
@@ -107,6 +102,21 @@ export function Dashboard() {
           </div>
         )}
 
+        <div className="flex items-center gap-4 px-4 border-l border-[var(--border)] max-sm:border-none max-sm:px-0">
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-sm font-[var(--font-mono)] text-[var(--text-secondary)] uppercase tracking-wider">Sessions</span>
+            <span className="text-base font-[var(--font-mono)] font-semibold text-[var(--text-primary)]">{totalSessions}</span>
+          </div>
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-sm font-[var(--font-mono)] text-[var(--text-secondary)] uppercase tracking-wider">Active</span>
+            <span className="text-base font-[var(--font-mono)] font-semibold text-[var(--text-primary)]">{activeSessions}</span>
+          </div>
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-sm font-[var(--font-mono)] text-[var(--text-secondary)] uppercase tracking-wider">Projects</span>
+            <span className="text-base font-[var(--font-mono)] font-semibold text-[var(--text-primary)]">{projectCount}</span>
+          </div>
+        </div>
+        </div>
       </Header>
 
       <div className="w-full px-8 py-6 max-sm:px-4 max-sm:py-4">

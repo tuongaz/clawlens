@@ -21,7 +21,7 @@ export function StatusIndicator({
       <span
         className="inline-block rounded-full bg-warning shrink-0"
         style={{ width: size, height: size, boxShadow: '0 0 8px rgba(234,179,8,0.5)', ...PULSE_STYLE }}
-        title="Waiting for input"
+        title="Waiting for user input"
       />
     )
   }
@@ -55,7 +55,7 @@ export function TypingDots({ isWaiting }: { isWaiting: boolean }) {
         <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]" style={{ animation: 'dot-blink 1.4s ease-in-out 0.4s infinite' }} />
       </div>
       <span className="text-base text-[var(--text-secondary)]">
-        {isWaiting ? 'Waiting for input\u2026' : 'Claude is working\u2026'}
+        {isWaiting ? 'Waiting for user input\u2026' : 'Claude is working\u2026'}
       </span>
     </div>
   )

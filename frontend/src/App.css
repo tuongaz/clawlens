@@ -6,6 +6,8 @@
    Centralised so every component inherits a consistent, readable size.
    Bump any value here and the whole UI follows.                        */
 @theme {
+  --font-mono: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+
   --font-size-xs: 0.875rem;   /* 14px – chart text, tiny annotations */
   --font-size-sm: 1rem;       /* 16px – secondary text, labels, badges */
   --font-size-base: 1.125rem; /* 18px – body / default */
@@ -32,7 +34,7 @@
   --accent-blue: #58a6ff;
   --accent-red: #f85149;
   --accent-orange: #d18616;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  --font-mono: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
   --radius: 8px;
   --radius-sm: 6px;
