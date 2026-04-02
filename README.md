@@ -7,6 +7,10 @@
 </p>
 
 <p align="center">
+  <a href="https://x.com/tuongaz"><img src="https://img.shields.io/badge/𝕏-000000?style=flat&logo=x&logoColor=white" alt="X"></a>
+</p>
+
+<p align="center">
   <a href="#features">Features</a> &middot;
   <a href="#quick-start">Quick Start</a> &middot;
   <a href="#development">Development</a> &middot;
@@ -103,6 +107,10 @@ The backend watches Claude Code's session files, parses JSONL entries into struc
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS, HeroUI |
 | Charts   | Recharts |
 | Package  | uv (Python), Bun (JS) |
+
+## Credits
+
+Inspired by [Sniffly](https://github.com/chiphuyen/sniffly) by [Chip Huyen](https://github.com/chiphuyen).
 
 ## License
 
