@@ -116,7 +116,7 @@ export function TurnCard({ turn, isFirst, defaultExpanded, showWorking, showWait
   const [expanded, setExpanded] = useState(defaultExpanded ?? true)
 
   return (
-    <div id={`turn-${turn.index}`} data-turn-index={turn.index} className={`relative border rounded-lg px-4 py-3 scroll-mt-[100px] ${isFirst ? 'bg-[rgba(88,166,255,0.08)] border-[rgba(88,166,255,0.3)]' : 'bg-[var(--bg-secondary)] border-[var(--border)]'}`}>
+    <div id={`turn-${turn.index}`} data-turn-index={turn.index} className={`relative border rounded-lg px-4 py-3 scroll-mt-[100px] ${isFirst ? 'bg-[rgba(88,166,255,0.08)] border-[rgba(88,166,255,0.3)] shadow-[0_0_12px_rgba(88,166,255,0.15)]' : 'bg-[var(--bg-secondary)] border-[var(--border)]'}`}>
       <button
         className="absolute top-2 right-2 p-1 text-[var(--text-secondary)] hover:text-[var(--accent-cyan)] transition-colors cursor-pointer z-10"
         onClick={() => setExpanded(!expanded)}
