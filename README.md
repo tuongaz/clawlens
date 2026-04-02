@@ -29,6 +29,18 @@ ClawView reads the JSONL session files that Claude Code writes to `~/.claude/pro
 - **Continuation chain linking** -- follows `/clear` continuations across sessions
 - **IDE integration** -- links to open files directly in your editor
 
+## Screenshots
+
+<p align="center">
+  <img src="dashboard.png" alt="Dashboard" width="100%">
+</p>
+<p align="center">
+  <img src="insights.png" alt="Project Insights" width="100%">
+</p>
+<p align="center">
+  <img src="sessiondetail.png" alt="Session Detail" width="100%">
+</p>
+
 ## Quick Start
 
 ```bash
