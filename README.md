@@ -72,14 +72,11 @@ uv run pyright src/clawlens/  # Type checking
 
 ClawLens is a Python (FastAPI) backend that serves a React (Vite) frontend as static files.
 
-```
-~/.claude/projects/**/*.jsonl
-         |
-         v
-   ┌───────────┐       WebSocket        ┌──────────────┐
-   │  FastAPI   │ ───────────────────>   │  React App   │
-   │  Backend   │ <─── REST/WS ───────  │  (Browser)   │
-   └───────────┘                         └──────────────┘
+```mermaid
+flowchart LR
+    A["~/.claude/projects/**/*.jsonl"] --> B["FastAPI Backend"]
+    B -- "WebSocket" --> C["React App (Browser)"]
+    C -- "REST / WS" --> B
 ```
 
 The backend watches Claude Code's session files, parses JSONL entries into structured data (sessions, turns, tool events), computes analytics, and pushes updates to connected clients over multiple WebSocket channels.
@@ -92,22 +89,6 @@ The backend watches Claude Code's session files, parses JSONL entries into struc
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS, HeroUI |
 | Charts   | Recharts |
 | Package  | uv (Python), Bun (JS) |
-
-### Project structure
-
-```
-src/clawlens/          # Backend
-  app.py               # FastAPI routes, static file serving
-  ws.py                # WebSocket endpoints
-  sessions.py          # JSONL parsing and session enrichment
-  insights.py          # Analytics computation
-  pricing.py           # Token cost calculations
-  models.py            # Pydantic data models
-frontend/src/          # Frontend
-  pages/               # Dashboard, ProjectInsights, SessionDetail
-  components/          # Charts, timeline, session views
-  hooks/               # WebSocket and data hooks
-```
 
 ## License
 
