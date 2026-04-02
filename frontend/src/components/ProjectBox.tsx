@@ -28,13 +28,13 @@ export function ProjectBox({ group, displayName }: ProjectBoxProps) {
     ? sortedSessions
     : filter === 'active'
       ? activeSessions
-      : sortedSessions.slice(0, 10)
+      : sortedSessions.slice(0, 8)
 
   const cycleFilter = () => {
-    setFilter(f => f === 'recent' ? 'all' : f === 'all' ? 'active' : 'recent')
+    setFilter(f => f === 'recent' ? 'all' : 'active')
   }
-  const buttonLabel = filter === 'recent' ? 'Show All' : filter === 'all' ? 'Show Active' : 'Show Recent'
-  const showFilterButton = group.sessions.length > 10 || (hasActive && hasIdle)
+  const buttonLabel = filter === 'recent' ? 'Show All' : filter === 'all' ? 'Show Active' : 'Show All'
+  const showFilterButton = group.sessions.length > 8 || (hasActive && hasIdle)
 
   return (
     <Card className="bg-transparent border-0 shadow-none">

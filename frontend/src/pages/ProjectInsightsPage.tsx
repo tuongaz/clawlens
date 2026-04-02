@@ -71,14 +71,14 @@ export function ProjectInsightsPage() {
     if (!group) return []
     if (filter === 'all') return sortedSessions
     if (filter === 'active') return activeSessions
-    return sortedSessions.slice(0, 10)
+    return sortedSessions.slice(0, 8)
   }, [group, filter, sortedSessions, activeSessions])
 
   const cycleFilter = () => {
-    setFilter(f => f === 'recent' ? 'all' : f === 'all' ? 'active' : 'recent')
+    setFilter(f => f === 'recent' ? 'all' : 'active')
   }
-  const buttonLabel = filter === 'recent' ? 'Show All' : filter === 'all' ? 'Show Active' : 'Show Recent'
-  const showFilterButton = (group?.sessions.length ?? 0) > 10 || (hasActive && hasIdle)
+  const buttonLabel = filter === 'recent' ? 'Show All' : filter === 'all' ? 'Show Active' : 'Show All'
+  const showFilterButton = (group?.sessions.length ?? 0) > 8 || (hasActive && hasIdle)
 
   const displayName = useMemo(() => {
     if (!group) return projectName
