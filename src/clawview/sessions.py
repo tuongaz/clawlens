@@ -88,10 +88,30 @@ def find_session_file(session_id: str) -> str | None:
     return matches[0] if matches else None
 
 
+_MEMORY_REF_RE = re.compile(r"memory/([A-Za-z0-9_.\-]+\.md)")
+
+
+def _extract_memory_refs(fpath: str) -> set[str]:
+    """Scan a session JSONL file and return the set of memory filenames referenced."""
+    refs: set[str] = set()
+    try:
+        with open(fpath, encoding="utf-8", errors="replace") as f:
+            for line in f:
+                for m in _MEMORY_REF_RE.finditer(line):
+                    refs.add(m.group(1))
+    except OSError:
+        pass
+    return refs
+
+
 def load_memory_files(session_id: str) -> list[MemoryFile]:
-    """Load all .md memory files for the project that owns *session_id*."""
+    """Load .md memory files that were actually referenced in the session."""
     fpath = find_session_file(session_id)
     if fpath is None:
+        return []
+
+    refs = _extract_memory_refs(fpath)
+    if not refs:
         return []
 
     home = os.path.expanduser("~")
@@ -102,7 +122,7 @@ def load_memory_files(session_id: str) -> list[MemoryFile]:
     try:
         for entry in sorted(os.listdir(mem_dir)):
             full = os.path.join(mem_dir, entry)
-            if entry.endswith(".md") and not os.path.isdir(full):
+            if entry in refs and entry.endswith(".md") and not os.path.isdir(full):
                 try:
                     content = Path(full).read_text(encoding="utf-8")
                     results.append(MemoryFile(name=entry, content=content))

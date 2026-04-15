@@ -1,0 +1,153 @@
+{
+  "project": "ClawView",
+  "branchName": "ralph/session-detail-project-page-improvements",
+  "description": "Session Detail & Project Page Improvements - Collapse turns by default, truncate verbose content, filter memory to session-used files, and add Memory/Skills tabs to the project page",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Collapse turns by default except the last turn",
+      "description": "As a user viewing a session, I want only the last turn expanded so I can quickly see the most recent activity without scrolling through a wall of content.",
+      "acceptanceCriteria": [
+        "ConversationTimeline passes defaultExpanded={false} to all TurnCards except the last, which gets defaultExpanded={true}",
+        "Collapsed turns show the existing 2-line preview text (via getPreviewText())",
+        "The last turn renders fully expanded",
+        "Expand all / Collapse all button still works as before",
+        "Manually expanding/collapsing individual turns still works",
+        "When Show all loads remaining turns beyond first 30, default collapse behavior applies to newly loaded turns as well",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Truncate expanded turn detail content with View button",
+      "description": "As a user, I want expanded turns to show only the first 3 lines of detailed content with a View button to expand, so turns don't take up excessive vertical space.",
+      "acceptanceCriteria": [
+        "When a turn is expanded, long content blocks (tool input details, lengthy assistant text) show only the first 3 lines using CSS line-clamp or equivalent",
+        "A View button appears below truncated content to expand it fully",
+        "Clicking View reveals full content inline and button text changes to Hide",
+        "Short content (3 lines or fewer) displays fully without a View button",
+        "This applies to tool input/detail sections within TurnCard events",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Backend: filter session memory to only referenced files",
+      "description": "As a frontend developer, I need the session memory endpoints to return only memory files actually used in the session, not all project memory files.",
+      "acceptanceCriteria": [
+        "Parse session JSONL to extract memory file names referenced in system prompts or tool calls (look for memory/ path patterns in message content)",
+        "Backend endpoint /ws/sessions/{sessionId}/memory returns only session-relevant memory files",
+        "REST endpoint /api/sessions/{sessionId}/memory also returns only session-relevant memory files",
+        "Returns empty array if no memory files were used in the session",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Frontend: update Memory sidebar to show session-used files only",
+      "description": "As a user viewing a session's memory, I want to see only the memory files that were actually referenced during that session.",
+      "acceptanceCriteria": [
+        "MemorySidebar.tsx displays only memory files returned by the updated backend endpoint (session-relevant files)",
+        "If no memory files were used in the session, show an empty state message like 'No memory files used in this session'",
+        "Existing expand/collapse and markdown rendering behavior unchanged",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "Depends on US-003 backend changes"
+    },
+    {
+      "id": "US-005",
+      "title": "Backend: add project-level memory endpoint",
+      "description": "As a frontend developer, I need a REST endpoint to fetch all memory files for a project, not scoped to a session.",
+      "acceptanceCriteria": [
+        "New endpoint GET /api/projects/{project_path}/memory returns all .md files from the project's memory directory (~/.claude/projects/{projectDir}/memory/)",
+        "Response format: array of MemoryFile objects (name + content), same as existing session memory endpoint",
+        "Returns empty array if directory doesn't exist or has no .md files",
+        "project_path is URL-encoded project directory path",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Reuse existing load_memory_files() logic without session-scoping"
+    },
+    {
+      "id": "US-006",
+      "title": "Backend: add project-level skills listing endpoint",
+      "description": "As a frontend developer, I need a REST endpoint to list all available skills for a project across project, global, and plugin sources.",
+      "acceptanceCriteria": [
+        "New endpoint GET /api/projects/{project_path}/skills returns all skills",
+        "Scans: {project_cwd}/.claude/skills/, ~/.claude/skills/, and plugin skill directories",
+        "Each skill includes: name, content (markdown), source ('project' | 'user' | 'plugin'), path",
+        "Deduplicates by name: project overrides global overrides plugin",
+        "Returns empty array if no skills found",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "Extend existing skill resolution logic from app.py to list all instead of resolving one by name"
+    },
+    {
+      "id": "US-007",
+      "title": "Frontend: add Memory tab to project page",
+      "description": "As a user viewing a project, I want a Memory tab that lists all memory files so I can browse and read them.",
+      "acceptanceCriteria": [
+        "New Memory tab appears in the project page tab bar after Sessions and Insights",
+        "Tab fetches data from GET /api/projects/{project_path}/memory",
+        "Lists all .md files with their names as clickable list items",
+        "Clicking a memory file opens a side panel (same style as existing MemorySidebar) showing full markdown content",
+        "Side panel can be closed via X button or clicking outside",
+        "Loading state shown while fetching memory files",
+        "Empty state message if no memory files exist",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "Depends on US-005 backend endpoint"
+    },
+    {
+      "id": "US-008",
+      "title": "Frontend: add Skills tab to project page",
+      "description": "As a user viewing a project, I want a Skills tab that lists all available skills so I can browse and read them.",
+      "acceptanceCriteria": [
+        "New Skills tab appears in the project page tab bar after Memory",
+        "Tab fetches data from GET /api/projects/{project_path}/skills",
+        "Lists all skills with name and source label (project / user / plugin)",
+        "Clicking a skill opens a side panel (same style as existing SkillPanel) showing skill markdown content",
+        "Side panel can be closed via X button or clicking outside",
+        "Loading state shown while fetching skills",
+        "Empty state message if no skills exist",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "Depends on US-006 backend endpoint"
+    },
+    {
+      "id": "US-009",
+      "title": "Release: build and verify with Make command",
+      "description": "As a developer, I want to build the project using the Make command, run it, and verify everything works before releasing.",
+      "acceptanceCriteria": [
+        "Run `make build` successfully with no errors",
+        "Run `make run` and verify the app starts on :3333",
+        "Verify frontend loads and sessions display correctly",
+        "Bump version if needed"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "Final release task - run make build && make run to verify"
+    }
+  ]
+}

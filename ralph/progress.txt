@@ -1,0 +1,54 @@
+# Ralph Progress Log
+Started: Thu 16 Apr 2026 09:43:23 AEST
+
+## Codebase Patterns
+- Frontend typecheck: `cd frontend && npx tsc --noEmit`
+- Backend tests: `uv run python -m pytest` (not `uv run pytest` — the latter has import issues)
+- ConversationTimeline uses `expandKey` state bump to force TurnCard re-mount when toggling expand/collapse all
+- TurnCard accepts `defaultExpanded` prop, initializes internal `expanded` state from it
+- `TruncatableContent` component uses CSS `line-clamp-3` + ResizeObserver to detect overflow and show View/Hide toggle
+- ToolInputDetail already has its own view/hide toggle (content hidden by default), so no extra truncation needed there
+- `_extract_memory_refs()` scans JSONL for `memory/<filename>.md` patterns — regex is `memory/([A-Za-z0-9_.\-]+\.md)`
+- `load_memory_files()` now filters by session-referenced files; both REST and WS endpoints use it so both are filtered
+
+---
+
+## 2026-04-16 - US-001
+- Implemented: Collapse all turns by default except the last turn
+- Changed `allExpanded` from `boolean` to `boolean | null` (null = default mode, true = all expanded, false = all collapsed)
+- Default mode (null): only the last visible turn is expanded, all others collapsed
+- Expand all / Collapse all toggle switches between true/false explicitly
+- Files changed: `frontend/src/components/session/ConversationTimeline.tsx`
+- **Learnings for future iterations:**
+  - The `isLast` variable was already computed in the render loop — just needed to use it for `defaultExpanded`
+  - Using 3-state (null/true/false) cleanly separates "initial default" from "user-controlled toggle"
+  - `expandKey` bump on toggle forces TurnCard re-mount, so `defaultExpanded` changes take effect
+---
+
+## 2026-04-16 - US-002
+- Implemented: Truncate expanded turn detail content with View/Hide button
+- Added `TruncatableContent` component that uses CSS `line-clamp-3` for 3-line truncation
+- Uses `ResizeObserver` to detect if content is actually overflowing (no false View buttons on short content)
+- Wrapped text events' `TaskNotificationContent` with `TruncatableContent`
+- ToolInputDetail already hidden by default with its own view/hide toggle — no additional truncation needed
+- Files changed: `frontend/src/components/session/TurnCard.tsx`
+- **Learnings for future iterations:**
+  - `line-clamp-3` from Tailwind works well for CSS-based truncation with no JS height calculation
+  - `ResizeObserver` is more reliable than one-time `useEffect` check for detecting truncation (handles dynamic content)
+  - Compare `scrollHeight > clientHeight + 1` (the +1 avoids sub-pixel false positives)
+  - The View/Hide button styling matches the existing `ToolInputDetail` toggle pattern (accent-cyan, opacity transition)
+---
+
+## 2026-04-16 - US-003
+- Implemented: Backend filter session memory to only referenced files
+- Added `_MEMORY_REF_RE` regex and `_extract_memory_refs(fpath)` to scan JSONL for `memory/*.md` references
+- Modified `load_memory_files()` to only return memory files actually referenced in the session
+- Both REST (`/api/sessions/{id}/memory`) and WS (`/ws/sessions/{id}/memory`) endpoints use the same function, so both are filtered
+- Returns empty array when no memory files were referenced
+- Files changed: `src/clawview/sessions.py`
+- **Learnings for future iterations:**
+  - Memory files appear in JSONL as full paths (`/Users/.../memory/MEMORY.md`) and relative refs (`memory/filename.md`)
+  - A simple regex `memory/([A-Za-z0-9_.\-]+\.md)` catches both patterns reliably
+  - No need to parse JSON structure per-line — line-level regex scan is fast and sufficient
+  - `_extract_memory_refs` is kept private; future US-005 will need a separate `load_all_memory_files()` for project-level (unfiltered) endpoint
+---
