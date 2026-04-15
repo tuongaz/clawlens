@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, type ReactNode } from 'react'
 import { ChevronUp, ChevronDown, X } from 'lucide-react'
 import type { Turn, UserImage } from '../../types'
 import { TaskNotificationContent } from './TaskNotificationContent'
@@ -113,6 +113,41 @@ function ToolInputDetail({ toolInput, toolExtra }: { toolInput: Record<string, u
   )
 }
 
+function TruncatableContent({ children }: { children: ReactNode }) {
+  const [expanded, setExpanded] = useState(false)
+  const [isTruncated, setIsTruncated] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = contentRef.current
+    if (!el) return
+    const check = () => setIsTruncated(el.scrollHeight > el.clientHeight + 1)
+    check()
+    const observer = new ResizeObserver(check)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [children])
+
+  return (
+    <div className="min-w-0">
+      <div
+        ref={contentRef}
+        className={expanded ? '' : 'line-clamp-3'}
+      >
+        {children}
+      </div>
+      {(isTruncated || expanded) && (
+        <button
+          className="mt-1 text-xs text-[var(--accent-cyan)] hover:text-[var(--accent-cyan)] opacity-60 hover:opacity-100 transition-opacity cursor-pointer bg-transparent border-none p-0"
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? 'Hide' : 'View'}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export function TurnCard({ turn, isFirst, defaultExpanded, showWorking, showWaiting, onTeammateClick }: TurnCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded ?? true)
 
@@ -178,7 +213,9 @@ export function TurnCard({ turn, isFirst, defaultExpanded, showWorking, showWait
                 ) : (
                   <div key={i} className="flex gap-1.5 text-base text-[var(--text-primary)] break-words">
                     <span className="flex items-center shrink-0 h-[1.5em] leading-[1.5em]"><span className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]" /></span>
-                    <TaskNotificationContent text={ev.text} onTeammateClick={onTeammateClick} />
+                    <TruncatableContent>
+                      <TaskNotificationContent text={ev.text} onTeammateClick={onTeammateClick} />
+                    </TruncatableContent>
                   </div>
                 )
               )}
