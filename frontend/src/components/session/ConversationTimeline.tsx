@@ -28,14 +28,15 @@ export function ConversationTimeline({ turns, isActive, isWaiting, showAll, onSh
   const firstTimestamp = turns.length > 0 ? new Date(turns[0].timestamp).getTime() : 0
   const bottomRef = useRef<HTMLDivElement>(null)
   const prevTurnCountRef = useRef(turns.length)
-  const [allExpanded, setAllExpanded] = useState(true)
+  // null = default mode (only last turn expanded), true = all expanded, false = all collapsed
+  const [allExpanded, setAllExpanded] = useState<boolean | null>(null)
   // Bump key to force TurnCard re-mount when toggling expand/collapse
   const [expandKey, setExpandKey] = useState(0)
   const [activeTurnIndex, setActiveTurnIndex] = useState<number | null>(null)
   const visibleMapRef = useRef<Map<number, DOMRectReadOnly>>(new Map())
 
   const toggleAll = () => {
-    setAllExpanded((v) => !v)
+    setAllExpanded((v) => (v === true ? false : true))
     setExpandKey((k) => k + 1)
   }
 
@@ -108,10 +109,10 @@ export function ConversationTimeline({ turns, isActive, isWaiting, showAll, onSh
         <button
           onClick={toggleAll}
           className="flex items-center gap-1 text-sm text-[var(--text-secondary)] hover:text-[var(--accent-cyan)] transition-colors cursor-pointer"
-          title={allExpanded ? 'Collapse all turns' : 'Expand all turns'}
+          title={allExpanded === true ? 'Collapse all turns' : 'Expand all turns'}
         >
-          {allExpanded ? <ChevronsDownUp size={16} /> : <ChevronsUpDown size={16} />}
-          <span>{allExpanded ? 'Collapse all' : 'Expand all'}</span>
+          {allExpanded === true ? <ChevronsDownUp size={16} /> : <ChevronsUpDown size={16} />}
+          <span>{allExpanded === true ? 'Collapse all' : 'Expand all'}</span>
         </button>
       </div>
       <div className="space-y-5">
@@ -200,7 +201,7 @@ export function ConversationTimeline({ turns, isActive, isWaiting, showAll, onSh
               </div>
               {/* Turn card */}
               <div className="flex-1 min-w-0 pb-2">
-                <TurnCard turn={turn} isFirst={turn.index === 1} defaultExpanded={allExpanded} showWorking={isActive && isLast && !isWaiting && (Date.now() - new Date(turn.timestamp).getTime()) < 5 * 60 * 1000} showWaiting={isActive && isLast && isWaiting} onTeammateClick={onTeammateClick} />
+                <TurnCard turn={turn} isFirst={turn.index === 1} defaultExpanded={allExpanded === null ? isLast : allExpanded} showWorking={isActive && isLast && !isWaiting && (Date.now() - new Date(turn.timestamp).getTime()) < 5 * 60 * 1000} showWaiting={isActive && isLast && isWaiting} onTeammateClick={onTeammateClick} />
               </div>
             </div>
           )
