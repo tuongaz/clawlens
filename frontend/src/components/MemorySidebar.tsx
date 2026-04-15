@@ -38,7 +38,7 @@ export function MemoryPanel() {
       {error && <ErrorAlert message={error} />}
 
       {!loading && !error && files.length === 0 && (
-        <EmptyState message="No memory files found" />
+        <EmptyState message="No memory files used in this session" />
       )}
 
       {!loading && !error && files.length > 0 && (
