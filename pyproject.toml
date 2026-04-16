@@ -50,6 +50,3 @@ packages = ["src/clawview"]
 
 [tool.hatch.build.targets.sdist.force-include]
 "src/clawview/web" = "src/clawview/web"
-
-[tool.uv.workspace]
-members = ["clawview"]
