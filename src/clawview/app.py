@@ -1,7 +1,6 @@
 """ClawView – real-time Claude Code session dashboard."""
 
 import argparse
-from importlib.metadata import version
 import asyncio
 import os
 from pathlib import Path
@@ -66,11 +65,6 @@ async def ws_session_memory_route(ws: WebSocket, session_id: str) -> None:
 @app.websocket("/ws/insights/{session_id}")
 async def ws_insights_route(ws: WebSocket, session_id: str) -> None:
     await session_insights_websocket(ws, session_id)
-
-
-@app.get("/api/version")
-async def get_version() -> JSONResponse:
-    return JSONResponse({"version": version("clawview")})
 
 
 @app.get("/api/projects/{project_path:path}/sessions")
@@ -187,7 +181,6 @@ async def spa_fallback(request: Request, full_path: str) -> FileResponse:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="ClawView dashboard server")
-    parser.add_argument("--version", action="version", version=f"clawview {version('clawview')}")
     parser.add_argument("--port", type=int, default=3333)
     args = parser.parse_args()
     uvicorn.run(app, host="0.0.0.0", port=args.port)

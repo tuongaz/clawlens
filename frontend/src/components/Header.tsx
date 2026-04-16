@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from 'react'
+import { type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 interface HeaderProps {
@@ -6,15 +6,6 @@ interface HeaderProps {
 }
 
 export function Header({ children }: HeaderProps) {
-  const [version, setVersion] = useState('')
-
-  useEffect(() => {
-    fetch('/api/version')
-      .then((r) => r.json())
-      .then((d) => setVersion(d.version))
-      .catch(() => {})
-  }, [])
-
   return (
     <header className="sticky top-0 z-20 bg-[var(--bg-primary)] border-b border-[var(--border)] px-8 py-3 max-sm:px-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -25,9 +16,6 @@ export function Header({ children }: HeaderProps) {
             <circle cx="13" cy="16" r="6" fill="#6b7280" opacity="0.7" />
           </svg>
           <span className="font-[var(--font-mono)] text-xl font-bold text-white tracking-wide">ClawView</span>
-          {version && (
-            <span className="font-[var(--font-mono)] text-[10px] text-white/30 self-end -ml-1 mb-0.5">v{version}</span>
-          )}
         </Link>
         {children}
       </div>
