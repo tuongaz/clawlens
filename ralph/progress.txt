@@ -84,6 +84,54 @@ Started: Thu 16 Apr 2026 09:43:23 AEST
   - `load_all_memory_files` reuses the same MemoryFile model and sorted listdir pattern as `load_memory_files` but skips the session ref filter
 ---
 
+## 2026-04-16 - US-007
+- Implemented: Memory tab on the project page
+- Created `ProjectMemoryTab` component that fetches from `GET /api/projects/{path}/memory`
+- Lists memory files as clickable items; clicking opens a `Sidebar` panel with rendered markdown content
+- Side panel closes via X button, Escape key, or clicking the backdrop
+- Loading state and empty state messages included
+- Added 'memory' to the tab bar in `ProjectInsightsPage` (after Sessions and Insights)
+- Updated skeleton loading state to include the third tab
+- Files changed: `frontend/src/components/ProjectMemoryTab.tsx` (new), `frontend/src/pages/ProjectInsightsPage.tsx`
+- **Learnings for future iterations:**
+  - Project page tabs use a simple union type + button array pattern — just extend the type and array to add new tabs
+  - REST fetch with `encodeURIComponent(projectPath)` matches the backend `{project_path:path}` parameter
+  - The `Sidebar` component handles Escape key and backdrop click out of the box — no extra close logic needed
+  - `MarkdownRenderer` class string from `MemorySidebar` can be reused for consistent markdown styling
+  - Manual browser verification needed (no browser tools configured in this session)
+---
+
+## 2026-04-16 - US-008
+- Implemented: Skills tab on the project page
+- Created `ProjectSkillsTab` component that fetches from `GET /api/projects/{path}/skills`
+- Lists skills as clickable items with source label (project/user/plugin) color-coded
+- Clicking opens a `Sidebar` panel with rendered markdown content and source badge
+- Side panel closes via X button, Escape key, or clicking the backdrop
+- Loading state and empty state messages included
+- Added 'skills' to the tab bar in `ProjectInsightsPage` (after Memory)
+- Updated skeleton loading state to include the fourth tab
+- Added `SkillFile` interface to frontend types
+- Files changed: `frontend/src/components/ProjectSkillsTab.tsx` (new), `frontend/src/pages/ProjectInsightsPage.tsx`, `frontend/src/types.ts`
+- **Learnings for future iterations:**
+  - Same pattern as ProjectMemoryTab — fetch, list, sidebar — just different data shape and accent colors
+  - `SkillFile` has extra fields vs `MemoryFile`: `source` and `path`
+  - Source colors: green for project, cyan for user, magenta for plugin — matches the accent variable naming convention
+  - Key should include source to avoid duplicates: `${skill.source}:${skill.name}`
+  - Manual browser verification needed (no browser tools configured in this session)
+---
+
+## 2026-04-16 - US-009
+- Verified: `make build` completes successfully (frontend build + uv sync)
+- Verified: app starts on :3333, frontend returns HTTP 200, `/api/sessions` returns HTTP 200
+- Verified: all 99 backend tests pass, frontend typecheck clean
+- Bumped version from 0.1.2 to 0.2.0 for this feature batch (8 feature commits)
+- Files changed: `pyproject.toml`
+- **Learnings for future iterations:**
+  - `pyright` is not installed as a uv dependency — use `uv run pyright` will fail; it's listed in CLAUDE.md but may need manual install
+  - Version in `pyproject.toml` is the single source of truth for the package version
+  - `make run` depends on `build` target, so `make run` alone does a full build first
+---
+
 ## 2026-04-16 - US-006
 - Implemented: Backend project-level skills listing endpoint
 - Added `SkillFile` model (name, content, source, path) to models.py

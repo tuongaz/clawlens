@@ -113,7 +113,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Depends on US-005 backend endpoint"
     },
     {
@@ -132,7 +132,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Depends on US-006 backend endpoint"
     },
     {
@@ -146,7 +146,7 @@
         "Bump version if needed"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Final release task - run make build && make run to verify"
     }
   ]
