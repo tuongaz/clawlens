@@ -86,6 +86,13 @@ export interface MemoryFile {
   content: string
 }
 
+export interface SkillFile {
+  name: string
+  content: string
+  source: string
+  path: string
+}
+
 export interface ProjectGroup {
   projectName: string
   path: string
