@@ -174,6 +174,15 @@ class MemoryFile(BaseModel):
     content: str = ""
 
 
+class SkillFile(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    name: str = ""
+    content: str = ""
+    source: str = ""  # "project" | "user" | "plugin"
+    path: str = ""
+
+
 class DashboardMessage(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 

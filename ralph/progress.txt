@@ -13,6 +13,9 @@ Started: Thu 16 Apr 2026 09:43:23 AEST
 - MemoryPanel component is in `frontend/src/components/MemorySidebar.tsx` (not `session/`), rendered via nested route `<Outlet />`
 - `_find_project_dir()` resolves a decoded project path back to the Claude project directory name by scanning `~/.claude/projects/`
 - `load_all_memory_files()` loads all .md files from a project's memory dir without session-scoping (used by project-level endpoint)
+- Skills have two file formats: `{name}.md` (flat file) and `{name}/SKILL.md` (directory-based)
+- `installed_plugins.json` at `~/.claude/plugins/` maps plugin names to install paths; each plugin's skills are in `{installPath}/skills/`
+- Skill deduplication: load lowest priority first (plugin), then overwrite with higher (user, project) — simple dict key replacement
 
 ---
 
@@ -79,4 +82,19 @@ Started: Thu 16 Apr 2026 09:43:23 AEST
   - The `{project_path:path}` FastAPI path parameter captures slashes, so full filesystem paths work as URL segments
   - Endpoint placement matters: project-level endpoints must be defined before the SPA catch-all `/{full_path:path}`
   - `load_all_memory_files` reuses the same MemoryFile model and sorted listdir pattern as `load_memory_files` but skips the session ref filter
+---
+
+## 2026-04-16 - US-006
+- Implemented: Backend project-level skills listing endpoint
+- Added `SkillFile` model (name, content, source, path) to models.py
+- Added `_scan_skills_in_dir()` helper that finds both `{name}.md` and `{name}/SKILL.md` skill formats
+- Added `_all_plugin_skill_dirs()` that reads `installed_plugins.json` + legacy flat dirs
+- Added `load_all_skills(project_path)` that scans plugin → user → project dirs with deduplication (project overrides user overrides plugin)
+- Added `GET /api/projects/{project_path}/skills` endpoint in app.py
+- Files changed: `src/clawview/models.py`, `src/clawview/sessions.py`, `src/clawview/app.py`
+- **Learnings for future iterations:**
+  - Skills have two file layouts: flat `{name}.md` files and directory-based `{name}/SKILL.md`
+  - `installed_plugins.json` uses format `{"plugins": {"name@marketplace": [{"installPath": "..."}]}}` — iterate all keys to get all plugins
+  - For deduplication with priority, load lowest-priority source first and overwrite dict keys with higher-priority sources
+  - Legacy plugin dirs live at `~/.claude/plugins/{name}/skills/` as fallback
 ---

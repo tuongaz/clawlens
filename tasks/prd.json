@@ -94,7 +94,7 @@
         "Typecheck passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Extend existing skill resolution logic from app.py to list all instead of resolving one by name"
     },
     {

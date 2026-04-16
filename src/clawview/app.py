@@ -14,6 +14,7 @@ from clawview.sessions import (
     enrich_session_detail,
     find_session_file,
     load_all_memory_files,
+    load_all_skills,
     load_grouped_sessions,
     load_memory_files,
     load_skill_content,
@@ -97,6 +98,15 @@ async def get_project_memory(project_path: str) -> JSONResponse:
     files = await asyncio.to_thread(load_all_memory_files, project_path)
     return JSONResponse(
         content=[f.model_dump(by_alias=True) for f in files],
+    )
+
+
+@app.get("/api/projects/{project_path:path}/skills")
+async def get_project_skills(project_path: str) -> JSONResponse:
+    """Return all skills for a project."""
+    skills = await asyncio.to_thread(load_all_skills, project_path)
+    return JSONResponse(
+        content=[s.model_dump(by_alias=True) for s in skills],
     )
 
 

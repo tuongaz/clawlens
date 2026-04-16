@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from clawview.ide import load_ide_pid_map, resolve_client_for_pid
-from clawview.models import MemoryFile, Message, ProjectGroup, Session, SessionDetail, SubagentInvocation, Turn, TurnEvent, UserImage
+from clawview.models import MemoryFile, Message, ProjectGroup, Session, SessionDetail, SkillFile, SubagentInvocation, Turn, TurnEvent, UserImage
 
 logger = logging.getLogger(__name__)
 
@@ -300,6 +300,103 @@ def load_skill_content(session_id: str, skill_name: str) -> dict[str, str] | Non
         source = "user"
 
     return {"content": content, "source": source, "path": match_path}
+
+
+def _scan_skills_in_dir(dir_path: str) -> list[tuple[str, str, str]]:
+    """Scan a directory for skill files.
+
+    Returns a list of ``(name, content, path)`` tuples.
+    Handles both ``{name}.md`` files and ``{name}/SKILL.md`` directories.
+    """
+    results: list[tuple[str, str, str]] = []
+    if not os.path.isdir(dir_path):
+        return results
+    try:
+        for entry in sorted(os.listdir(dir_path)):
+            full = os.path.join(dir_path, entry)
+            if os.path.isfile(full) and entry.endswith(".md"):
+                name = entry.removesuffix(".md")
+                try:
+                    content = Path(full).read_text(encoding="utf-8")
+                    results.append((name, content, full))
+                except OSError:
+                    pass
+            elif os.path.isdir(full):
+                skill_md = os.path.join(full, "SKILL.md")
+                if os.path.isfile(skill_md):
+                    try:
+                        content = Path(skill_md).read_text(encoding="utf-8")
+                        results.append((entry, content, skill_md))
+                    except OSError:
+                        pass
+    except OSError:
+        pass
+    return results
+
+
+def _all_plugin_skill_dirs(home: str) -> list[str]:
+    """Return skill directories for all installed plugins."""
+    dirs: list[str] = []
+    plugins_json = os.path.join(home, ".claude", "plugins", "installed_plugins.json")
+    try:
+        data = json.loads(Path(plugins_json).read_text(encoding="utf-8"))
+        for _key, entries in data.get("plugins", {}).items():
+            if isinstance(entries, list):
+                for entry in entries:
+                    install_path = entry.get("installPath", "")
+                    if install_path:
+                        skill_dir = os.path.join(install_path, "skills")
+                        if skill_dir not in dirs:
+                            dirs.append(skill_dir)
+    except (OSError, json.JSONDecodeError, KeyError):
+        pass
+    # Fallback: scan legacy flat plugin dirs
+    legacy_dir = os.path.join(home, ".claude", "plugins")
+    try:
+        for entry in os.listdir(legacy_dir):
+            full = os.path.join(legacy_dir, entry)
+            if os.path.isdir(full) and entry != "installed_plugins.json":
+                skill_dir = os.path.join(full, "skills")
+                if skill_dir not in dirs:
+                    dirs.append(skill_dir)
+    except OSError:
+        pass
+    return dirs
+
+
+def load_all_skills(project_path: str) -> list[SkillFile]:
+    """Load all skills for a project across project, user, and plugin sources.
+
+    *project_path* is the decoded filesystem path (e.g. ``/Users/foo/myproject``).
+    Deduplicates by name: project overrides user overrides plugin.
+    """
+    home = os.path.expanduser("~")
+    seen: dict[str, SkillFile] = {}
+
+    # 1. Plugin skills (lowest priority — added first, overwritten by higher)
+    for plugin_dir in _all_plugin_skill_dirs(home):
+        for name, content, path in _scan_skills_in_dir(plugin_dir):
+            if name not in seen:
+                seen[name] = SkillFile(
+                    name=name, content=content, source="plugin", path=path
+                )
+
+    # 2. User/global skills (medium priority)
+    user_dir = os.path.join(home, ".claude", "skills")
+    for name, content, path in _scan_skills_in_dir(user_dir):
+        seen[name] = SkillFile(
+            name=name, content=content, source="user", path=path
+        )
+
+    # 3. Project skills (highest priority)
+    if project_path and os.path.isdir(project_path):
+        proj_dir = os.path.join(project_path, ".claude", "skills")
+        for name, content, path in _scan_skills_in_dir(proj_dir):
+            seen[name] = SkillFile(
+                name=name, content=content, source="project", path=path
+            )
+
+    return sorted(seen.values(), key=lambda s: s.name)
 
 
 # ---------------------------------------------------------------------------
