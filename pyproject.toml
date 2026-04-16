@@ -3,7 +3,7 @@ name = "clawview"
 version = "0.2.3"
 description = "Real-time dashboard for monitoring Claude Code sessions"
 readme = "README.md"
-license = "MIT"
+license = {text = "MIT"}
 requires-python = ">=3.11"
 authors = [{ name = "Tuong Nguyen", email = "tuongaz@gmail.com" }]
 keywords = ["claude", "claude-code", "dashboard", "monitoring", "sessions"]
@@ -39,7 +39,7 @@ dev = [
 ]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling<1.27"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
