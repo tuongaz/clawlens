@@ -133,6 +133,52 @@ def load_memory_files(session_id: str) -> list[MemoryFile]:
     return results
 
 
+def _find_project_dir(project_path: str) -> str | None:
+    """Find the Claude project directory name for a given decoded project path.
+
+    Scans ``~/.claude/projects/`` and returns the directory name whose
+    ``decode_project_path()`` matches *project_path*, or ``None``.
+    """
+    home = os.path.expanduser("~")
+    projects_dir = os.path.join(home, ".claude", "projects")
+    try:
+        for entry in os.listdir(projects_dir):
+            full = os.path.join(projects_dir, entry)
+            if os.path.isdir(full) and decode_project_path(entry) == project_path:
+                return entry
+    except OSError:
+        pass
+    return None
+
+
+def load_all_memory_files(project_path: str) -> list[MemoryFile]:
+    """Load all .md memory files for a project (not session-scoped).
+
+    *project_path* is the decoded filesystem path (e.g. ``/Users/foo/myproject``).
+    Returns all ``.md`` files from ``~/.claude/projects/{dir}/memory/``.
+    """
+    dir_name = _find_project_dir(project_path)
+    if dir_name is None:
+        return []
+
+    home = os.path.expanduser("~")
+    mem_dir = os.path.join(home, ".claude", "projects", dir_name, "memory")
+
+    results: list[MemoryFile] = []
+    try:
+        for entry in sorted(os.listdir(mem_dir)):
+            full = os.path.join(mem_dir, entry)
+            if entry.endswith(".md") and not os.path.isdir(full):
+                try:
+                    content = Path(full).read_text(encoding="utf-8")
+                    results.append(MemoryFile(name=entry, content=content))
+                except OSError:
+                    pass
+    except OSError:
+        pass
+    return results
+
+
 def _extract_cwd(fpath: str) -> str:
     """Extract CWD from the first few lines of a JSONL session file."""
     try:

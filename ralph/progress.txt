@@ -10,6 +10,9 @@ Started: Thu 16 Apr 2026 09:43:23 AEST
 - ToolInputDetail already has its own view/hide toggle (content hidden by default), so no extra truncation needed there
 - `_extract_memory_refs()` scans JSONL for `memory/<filename>.md` patterns — regex is `memory/([A-Za-z0-9_.\-]+\.md)`
 - `load_memory_files()` now filters by session-referenced files; both REST and WS endpoints use it so both are filtered
+- MemoryPanel component is in `frontend/src/components/MemorySidebar.tsx` (not `session/`), rendered via nested route `<Outlet />`
+- `_find_project_dir()` resolves a decoded project path back to the Claude project directory name by scanning `~/.claude/projects/`
+- `load_all_memory_files()` loads all .md files from a project's memory dir without session-scoping (used by project-level endpoint)
 
 ---
 
@@ -51,4 +54,29 @@ Started: Thu 16 Apr 2026 09:43:23 AEST
   - A simple regex `memory/([A-Za-z0-9_.\-]+\.md)` catches both patterns reliably
   - No need to parse JSON structure per-line — line-level regex scan is fast and sufficient
   - `_extract_memory_refs` is kept private; future US-005 will need a separate `load_all_memory_files()` for project-level (unfiltered) endpoint
+---
+
+## 2026-04-16 - US-004
+- Implemented: Frontend update Memory sidebar to show session-used files only
+- Updated empty state message from "No memory files found" to "No memory files used in this session"
+- Backend already filters to session-referenced files (US-003), so frontend just displays what it receives — no data fetching changes needed
+- Files changed: `frontend/src/components/MemorySidebar.tsx`
+- **Learnings for future iterations:**
+  - MemoryPanel uses `useMemoryFiles` hook which connects to `/ws/sessions/{id}/memory` — already session-scoped after US-003
+  - The component is in `components/MemorySidebar.tsx` (not in `components/session/`) and exports `MemoryPanel`
+  - Sidebar uses `<Outlet />` pattern in SessionDetailPage for nested routes (`/session/:id/memory`)
+---
+
+## 2026-04-16 - US-005
+- Implemented: Backend project-level memory endpoint
+- Added `_find_project_dir(project_path)` helper that resolves a decoded path back to the Claude project directory name
+- Added `load_all_memory_files(project_path)` that reads all .md files from `~/.claude/projects/{dir}/memory/` without session filtering
+- Added `GET /api/projects/{project_path}/memory` endpoint in app.py, returns array of MemoryFile objects
+- Returns empty array if project not found or no memory files exist
+- Files changed: `src/clawview/sessions.py`, `src/clawview/app.py`
+- **Learnings for future iterations:**
+  - `decode_project_path()` is one-way (dir_name → real path); reverse lookup requires scanning all dirs in `~/.claude/projects/`
+  - The `{project_path:path}` FastAPI path parameter captures slashes, so full filesystem paths work as URL segments
+  - Endpoint placement matters: project-level endpoints must be defined before the SPA catch-all `/{full_path:path}`
+  - `load_all_memory_files` reuses the same MemoryFile model and sorted listdir pattern as `load_memory_files` but skips the session ref filter
 ---

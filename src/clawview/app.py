@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from clawview.sessions import (
     enrich_session_detail,
     find_session_file,
+    load_all_memory_files,
     load_grouped_sessions,
     load_memory_files,
     load_skill_content,
@@ -88,6 +89,15 @@ async def get_project_sessions(
                 }
             )
     return JSONResponse(status_code=404, content={"error": "Project not found"})
+
+
+@app.get("/api/projects/{project_path:path}/memory")
+async def get_project_memory(project_path: str) -> JSONResponse:
+    """Return all memory files for a project."""
+    files = await asyncio.to_thread(load_all_memory_files, project_path)
+    return JSONResponse(
+        content=[f.model_dump(by_alias=True) for f in files],
+    )
 
 
 @app.get("/api/sessions/{session_id}")

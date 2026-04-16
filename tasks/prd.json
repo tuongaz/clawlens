@@ -63,7 +63,7 @@
         "Typecheck passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Depends on US-003 backend changes"
     },
     {
@@ -78,7 +78,7 @@
         "Typecheck passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Reuse existing load_memory_files() logic without session-scoping"
     },
     {
