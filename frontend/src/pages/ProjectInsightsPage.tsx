@@ -5,6 +5,7 @@ import { useWebSocket } from '../hooks/useWebSocket'
 import { Header } from '../components/Header'
 import { EmptyState } from '../components/ui'
 import { SessionCard } from '../components/SessionCard'
+import { ProjectMemoryTab } from '../components/ProjectMemoryTab'
 
 const InsightsPanel = lazy(() =>
   import('../components/insights/InsightsPanel').then(m => ({ default: m.InsightsPanel }))
@@ -14,7 +15,7 @@ function ProjectPageSkeleton() {
   return (
     <>
       <div className="flex gap-1 mb-6 border-b border-[var(--border)]">
-        {['sessions', 'insights'].map((tab) => (
+        {['sessions', 'insights', 'memory'].map((tab) => (
           <div key={tab} className="px-4 py-2 -mb-px border-b-2 border-transparent">
             <Skeleton className="w-16 h-4 rounded" />
           </div>
@@ -59,7 +60,7 @@ export function ProjectInsightsPage() {
 
   const sessionId = group?.sessions[0]?.sessionId ?? null
 
-  const [activeTab, setActiveTab] = useState<'sessions' | 'insights'>('sessions')
+  const [activeTab, setActiveTab] = useState<'sessions' | 'insights' | 'memory'>('sessions')
   const [filter, setFilter] = useState<'recent' | 'all' | 'active'>('recent')
 
   const activeSessions = group?.sessions.filter(s => s.isActive) ?? []
@@ -101,7 +102,7 @@ export function ProjectInsightsPage() {
         ) : group ? (
           <>
             <div className="flex gap-1 mb-6 border-b border-[var(--border)]">
-              {(['sessions', 'insights'] as const).map((tab) => (
+              {(['sessions', 'insights', 'memory'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -173,6 +174,10 @@ export function ProjectInsightsPage() {
                   <EmptyState message="No sessions available for insights." className="py-20" />
                 )}
               </>
+            )}
+
+            {activeTab === 'memory' && (
+              <ProjectMemoryTab projectPath={group.path} />
             )}
           </>
         ) : (
