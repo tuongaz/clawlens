@@ -68,6 +68,11 @@ async def ws_insights_route(ws: WebSocket, session_id: str) -> None:
     await session_insights_websocket(ws, session_id)
 
 
+@app.get("/api/version")
+async def get_version() -> JSONResponse:
+    return JSONResponse({"version": version("clawview")})
+
+
 @app.get("/api/projects/{project_path:path}/sessions")
 async def get_project_sessions(
     project_path: str, offset: int = 0, limit: int = 20
